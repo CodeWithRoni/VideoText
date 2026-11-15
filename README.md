@@ -7,12 +7,11 @@ A small Windows app that puts the same text on one or many videos.
 - **Fonts and style:** any font installed on your PC, bold, italic, size, color, outline (color and thickness), shadow, background box (color and opacity).
 - **Several texts and a logo:** add more than one text, plus a logo or watermark image.
 - **Timing:** show a text for the whole video or only between two times, with fade in and fade out.
-- **Style presets:** save a look once and apply it again with one click.
-- **Export settings:** quality (same as original, high, medium, small file) and the file name ending.
+- **Export settings:** quality (same as original, high, medium, small file) and an optional file name. Type `TRACK` and the videos are saved as `TRACK-1.mp4`, `TRACK-2.mp4`, …
 - **Finishing touches:** time-left estimate, "Open folder" when done, light and dark themes, automatic updates for the installed version.
 - Works fully offline. Your videos never leave your computer.
 
-Exported files are MP4 (H.264), saved as `<original name>_text.mp4` in the folder you choose. Existing files are never overwritten.
+Exported files are MP4 (H.264). If you leave the file name empty they are saved as `<original name>_text.mp4` in the folder you choose. Existing files are never overwritten.
 
 ## Download
 
@@ -28,7 +27,7 @@ The `.exe` files are not code-signed, so Windows SmartScreen may show a warning 
 
 ## How to use
 
-1. Click **Add videos** (or drag videos into the window).
+1. Add your videos (click the drop area or drag videos into the window). Use **+ Add videos** at the top to add more.
 2. Type your text and pick **Top**, **Middle** or **Bottom**, or drag it in the preview. Use **+ Text** and **+ Logo** for more layers.
 3. Click **Export**, choose an output folder, and wait for every video to show **Done**.
 

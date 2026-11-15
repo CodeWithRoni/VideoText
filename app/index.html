@@ -29,7 +29,11 @@
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .app { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: 100vh; }
-  .stage { background: var(--stage); display: flex; align-items: center; justify-content: center; padding: 20px; min-width: 0; min-height: 0; }
+  .stage { background: var(--stage); display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; min-width: 0; min-height: 0; }
+  .vbar { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .vbar .btn { flex: none; white-space: nowrap; }
+  .sep { border-top: 1px solid var(--line); padding-top: 14px; }
   .side { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
   .head { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
   .logo { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 15px; }
@@ -62,7 +66,7 @@
 
   .player { display: none; flex-direction: column; gap: 10px; max-width: 100%; max-height: 100%; align-items: center; }
   .frame { position: relative; line-height: 0; max-width: 100%; }
-  .frame video { display: block; max-width: 100%; max-height: calc(100vh - 100px); background: #000; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  .frame video { display: block; max-width: 100%; max-height: calc(100vh - 210px); background: #000; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
   .frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: default; border-radius: 8px; }
   .ctrl { display: flex; align-items: center; gap: 10px; width: min(100%, 560px); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px 6px 6px; }
   .ctrl button { width: 32px; height: 32px; border-radius: 7px; border: 0; background: transparent; display: grid; place-items: center; font-size: 14px; }
@@ -103,11 +107,11 @@
   .seg button { flex: 1; background: transparent; border: 0; border-radius: 6px; padding: 4px; font-size: 13px; color: var(--muted); }
   .seg button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
 
-  .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; max-height: 78px; overflow-y: auto; }
   .list li {
     display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
-    border: 1px solid var(--line); background: var(--field); border-radius: 9px; padding: 6px 8px 6px 11px; cursor: pointer;
-    position: relative; overflow: hidden;
+    border: 1px solid var(--line); background: var(--field); border-radius: 9px; padding: 4px 6px 4px 11px; cursor: pointer;
+    position: relative; overflow: hidden; max-width: 260px;
   }
   .list li.sel { border-color: var(--accent); background: var(--accent-soft); }
   .list .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.5px; }
@@ -116,7 +120,6 @@
   .list .rm { border: 0; background: none; color: var(--muted); width: 24px; height: 24px; border-radius: 6px; font-size: 16px; line-height: 1; }
   .list .rm:hover:not(:disabled) { background: var(--line); color: var(--text); }
   .list .fill { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); width: 0; transition: width .2s; }
-  .empty { color: var(--muted); font-size: 13px; border: 1px dashed var(--line); border-radius: 9px; padding: 12px; text-align: center; }
 
   .btn { width: 100%; border: 0; border-radius: 10px; padding: 11px; font-size: 15px; font-weight: 650; background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow); }
   .btn:hover:not(:disabled) { background: var(--accent-hover); }
@@ -133,7 +136,7 @@
   @media (max-width: 880px) {
     .app { grid-template-columns: 1fr; grid-template-rows: 46vh auto; height: auto; min-height: 100vh; }
     .side { border-left: 0; border-top: 1px solid var(--line); }
-    .frame video { max-height: calc(46vh - 100px); }
+    .frame video { max-height: calc(46vh - 190px); }
   }
 </style>
 <script>
@@ -152,6 +155,11 @@
 <body>
 <div class="app">
   <main class="stage" id="stage">
+    <div class="vbar" id="vbar" hidden>
+      <ul class="list" id="list"></ul>
+      <button class="btn ghost" id="add" type="button">+ Add videos</button>
+    </div>
+    <div class="view">
     <div class="drop" id="drop" tabindex="0" role="button">
       <strong>Add your videos</strong>
       <span>Click to choose one or more videos, or drag and drop them here</span>
@@ -167,6 +175,7 @@
         <span class="time" id="time">0:00 / 0:00</span>
         <button type="button" id="mute" aria-label="Mute">🔊</button>
       </div>
+    </div>
     </div>
     <input type="file" id="file" accept="video/*,.mkv,.mov" multiple hidden>
     <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
@@ -187,50 +196,24 @@
 
       <div id="props"></div>
 
-      <details id="presetBox">
-        <summary>Style presets</summary>
-        <div class="grp">
-          <div class="row">
-            <select id="presetSel" aria-label="Saved styles"></select>
-            <button class="btn ghost" id="presetApply" type="button">Apply</button>
-            <button class="btn ghost" id="presetDel" type="button">Delete</button>
-          </div>
-          <div class="row">
-            <input type="text" id="presetName" placeholder="Name for the current style" style="flex:1" maxlength="40">
-            <button class="btn ghost" id="presetSave" type="button">Save</button>
-          </div>
-        </div>
-      </details>
-
-      <details open>
-        <summary><span id="listLabel">Videos</span></summary>
-        <div class="grp">
-          <ul class="list" id="list"></ul>
-          <div class="empty" id="empty">No videos added yet</div>
-          <button class="btn ghost wide" id="add" type="button">+ Add videos</button>
-        </div>
-      </details>
-
-      <details>
-        <summary>Export settings</summary>
-        <div class="grp">
-          <div class="row"><span class="mini" style="width:104px">Quality</span>
-            <select id="quality">
-              <option value="original">Same as original</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="small">Small file</option>
-            </select>
-          </div>
-          <div class="row"><span class="mini" style="width:104px">File name ending</span>
-            <input type="text" id="suffix" value="_text" maxlength="30" style="flex:1">
-          </div>
-          <div class="mini" id="nameSample"></div>
-        </div>
-      </details>
     </div>
 
     <div class="foot">
+      <div class="grp">
+        <div class="lbl">Export settings</div>
+        <div class="row"><span class="mini" style="width:72px">File name</span>
+          <input type="text" id="outName" placeholder="Empty = keep each video's own name" maxlength="60" style="flex:1">
+        </div>
+        <div class="mini" id="nameSample"></div>
+        <div class="row"><span class="mini" style="width:72px">Quality</span>
+          <select id="quality">
+            <option value="original">Same as original</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="small">Small file</option>
+          </select>
+        </div>
+      </div>
       <div class="bar" id="bar"><div id="barfill"></div></div>
       <div class="msg" id="msg"></div>
       <button class="btn" id="export" disabled>Export</button>
@@ -252,7 +235,7 @@
   };
   const state = {
     items: [], sel: null, layers: [], selLayer: null, busy: false, cancel: null, cancelled: false, url: null, nextId: 1,
-    quality: store.get('vt-quality', 'original'), suffix: store.get('vt-suffix', '_text'), lastDest: null,
+    quality: store.get('vt-quality', 'original'), outName: '', lastDest: null,
   };
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const FALLBACK = '"Segoe UI", "Nirmala UI", "Noto Sans Bengali", Arial, sans-serif';
@@ -645,7 +628,6 @@
     tb.addEventListener('toggle', () => { timingOpen = tb.open; });
     if (L.type === 'logo') { $('logoName').textContent = L.name || ''; $('logoReplace').addEventListener('click', () => $('logoFile').click()); }
     else { fillFonts(); $('allFonts').addEventListener('click', async () => { if (!(await loadAllFonts())) setMsg('Could not read the installed fonts on this computer.', 'err'); }); }
-    $('presetBox').hidden = L.type !== 'text';
     syncPanel();
   }
   function syncPanel() {
@@ -679,43 +661,14 @@
     syncPanel(); refresh();
   });
 
-  // ---------- style presets ----------
-  let presets = store.get('vt-presets', []);
-  if (!Array.isArray(presets)) presets = [];
-  function renderPresets() {
-    const sel = $('presetSel'); sel.textContent = '';
-    if (!presets.length) { const o = document.createElement('option'); o.textContent = 'No saved styles yet'; o.value = ''; sel.appendChild(o); }
-    presets.forEach((p, i) => { const o = document.createElement('option'); o.value = i; o.textContent = p.name; sel.appendChild(o); });
-    $('presetApply').disabled = $('presetDel').disabled = !presets.length || state.busy;
-    $('presetSave').disabled = state.busy;
-  }
-  $('presetSave').addEventListener('click', () => {
-    const L = curLayer(); if (!L || L.type !== 'text') return;
-    const name = $('presetName').value.trim();
-    if (!name) { $('presetName').focus(); setMsg('Type a name for the style first.'); return; }
-    const style = {}; for (const k of STYLE_KEYS) style[k] = L[k];
-    const i = presets.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
-    if (i >= 0) presets[i] = { name, style }; else presets.push({ name, style });
-    store.set('vt-presets', presets); renderPresets();
-    $('presetSel').value = i >= 0 ? i : presets.length - 1; $('presetName').value = '';
-    setMsg(`Style "${name}" saved.`, 'ok');
-  });
-  $('presetApply').addEventListener('click', () => {
-    const p = presets[+$('presetSel').value], L = curLayer(); if (!p || !L || L.type !== 'text') return;
-    for (const k of STYLE_KEYS) if (k in p.style) L[k] = p.style[k];
-    buildPanel(); refresh();
-  });
-  $('presetDel').addEventListener('click', () => {
-    const i = +$('presetSel').value; if (!presets[i]) return;
-    presets.splice(i, 1); store.set('vt-presets', presets); renderPresets();
-  });
-
   // ---------- export settings ----------
-  const cleanSuffix = s => s.replace(/[\\/:*?"<>|]/g, '').slice(0, 30);
+  const cleanName = s => s.replace(/[\\/:*?"<>|]/g, '').replace(/\.+$/, '').trim().slice(0, 60);
+  // Output name (without .mp4) for the n-th video: "TRACK-1", "TRACK-2"… or the video's own name when no name is given.
+  const outBase = (file, n) => state.outName ? `${state.outName}-${n}` : baseName(file.name) + '_text';
   const baseName = n => n.replace(/\.[^.]+$/, '');
-  $('quality').value = state.quality; $('suffix').value = state.suffix;
+  $('quality').value = state.quality;
   $('quality').addEventListener('change', () => { state.quality = $('quality').value; store.set('vt-quality', state.quality); });
-  $('suffix').addEventListener('input', () => { state.suffix = cleanSuffix($('suffix').value); store.set('vt-suffix', state.suffix); refresh(); });
+  $('outName').addEventListener('input', () => { state.outName = cleanName($('outName').value); refresh(); });
 
   // ---------- general refresh ----------
   function setMsg(t, cls) { msg.textContent = t || ''; msg.className = 'msg' + (cls ? ' ' + cls : ''); }
@@ -725,10 +678,9 @@
     const btn = $('export');
     btn.disabled = state.busy || !n || !state.layers.some(layerHasContent);
     btn.textContent = n > 1 ? `Export ${n} videos` : 'Export video';
-    $('listLabel').textContent = n ? `Videos (${n})` : 'Videos';
-    $('empty').hidden = !!n;
-    const sample = n ? baseName((state.items.find(x => x.id === state.sel) || state.items[0]).file.name) : 'my-video';
-    $('nameSample').textContent = `Saved as: ${sample}${state.suffix}.mp4`;
+    $('vbar').hidden = !n;
+    const names = (n ? state.items : [{ file: { name: 'my-video.mp4' } }]).slice(0, 2).map((it, i) => outBase(it.file, i + 1) + '.mp4');
+    $('nameSample').textContent = 'Saved as: ' + names.join(', ') + (n > 2 ? ' …' : '');
   }
 
   // ---------- video list ----------
@@ -820,8 +772,8 @@
     state.busy = b;
     $('bar').style.display = b ? 'block' : 'none';
     $('cancel').hidden = !b;
-    for (const el of document.querySelectorAll('#add, #quality, #suffix, #presetName, #presetSel')) el.disabled = b;
-    renderLayers(); syncPanel(); renderPresets(); renderList();
+    for (const el of document.querySelectorAll('#add, #quality, #outName')) el.disabled = b;
+    renderLayers(); syncPanel(); renderList();
   }
   function freeName(used, base) {
     for (let i = 1; ; i++) {
@@ -874,7 +826,7 @@
     };
   }
 
-  async function exportOne(MB, it, layers, dest, onProgress) {
+  async function exportOne(MB, it, base, layers, dest, onProgress) {
     let out = null, input = null;
     try {
       input = new MB.Input({ source: new MB.BlobSource(it.file), formats: MB.ALL_FORMATS });
@@ -895,7 +847,7 @@
       const frame = new OffscreenCanvas(W, H);
       const fctx = frame.getContext('2d', { alpha: false });
 
-      out = await dest.create(baseName(it.file.name) + state.suffix);
+      out = await dest.create(base);
       const output = new MB.Output({ format: new MB.Mp4OutputFormat(), target: out.target });
       const conversion = await MB.Conversion.init({
         input, output,
@@ -966,7 +918,7 @@
       const label = total > 1 ? `Exporting video ${i + 1} of ${total}` : 'Exporting';
       setMsg(label + '…');
       try {
-        await exportOne(Mediabunny, it, layers, dest, p => {
+        await exportOne(Mediabunny, it, outBase(it.file, i + 1), layers, dest, p => {
           it.progress = p; overall(p);
           if (!state.cancelled) setMsg(label + eta(startedAt, (done + failed + p) / total));
           const li = listEl.children[state.items.indexOf(it)];
@@ -999,7 +951,7 @@
 
   // ---------- start ----------
   state.layers.push(newText()); state.selLayer = state.layers[0].id;
-  renderLayers(); buildPanel(); renderPresets(); renderList();
+  renderLayers(); buildPanel(); renderList();
   if (native) loadAllFonts();          // the desktop app can list every installed font straight away
 })();
 </script>
