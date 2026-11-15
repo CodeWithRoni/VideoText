@@ -18,13 +18,30 @@
   "build": {
     "appId": "com.codewithroni.videotext",
     "productName": "VideoText",
-    "files": ["main.js", "app/**/*"],
-    "directories": { "output": "dist", "buildResources": "build" },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
     "win": {
       "icon": "build/icon.png",
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "nsis": {
@@ -32,6 +49,18 @@
       "allowToChangeInstallationDirectory": true,
       "artifactName": "VideoText-Setup-${version}.${ext}"
     },
-    "portable": { "artifactName": "VideoText-Portable-${version}.${ext}" }
+    "portable": {
+      "artifactName": "VideoText-Portable-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CodeWithRoni",
+        "repo": "VideoText"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.11"
   }
 }
