@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VideoText</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f3f5f9; --stage: #e6eaf1; --panel: #ffffff; --field: #f6f8fb; --line: #d9dfe9;
+    --text: #131a26; --muted: #5d6b80; --accent: #2f5bea; --accent-hover: #2449c4; --accent-ink: #ffffff;
+    --accent-soft: rgba(47,91,234,.10); --danger: #cf3a3a; --ok: #178a52; --shadow: 0 1px 2px rgba(16,24,40,.06);
+  }
+  :root[data-theme=dark] {
+    color-scheme: dark;
+    --bg: #0e1218; --stage: #090c11; --panel: #151b24; --field: #0f141b; --line: #273140;
+    --text: #e7ecf3; --muted: #8e9bb0; --accent: #6b8cff; --accent-hover: #86a1ff; --accent-ink: #0a1022;
+    --accent-soft: rgba(107,140,255,.14); --danger: #ff7b72; --ok: #4fd08c; --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.5 "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
+  }
+  button, textarea, input { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .app { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100vh; }
+  .stage { background: var(--stage); display: flex; align-items: center; justify-content: center; padding: 24px; min-width: 0; min-height: 0; }
+  .side { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .head { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .logo { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+  .head h1 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: -.01em; flex: 1; }
+  .theme { border: 1px solid var(--line); background: var(--field); border-radius: 8px; padding: 5px 10px; font-size: 12.5px; color: var(--muted); }
+  .theme:hover { color: var(--text); }
+  .body { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+  .foot { border-top: 1px solid var(--line); padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+  .lbl { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .lbl .link { text-transform: none; letter-spacing: 0; font-weight: 500; background: none; border: 0; color: var(--accent); padding: 0; font-size: 13px; }
+  .lbl .link:disabled { opacity: .4; }
+
+  .drop {
+    width: min(540px, 100%); border: 1.5px dashed var(--line); border-radius: 14px; padding: 54px 24px; background: var(--panel);
+    text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+  }
+  .drop:hover, .stage.over .drop { border-color: var(--accent); background: var(--accent-soft); }
+  .drop strong { display: block; font-size: 18px; font-weight: 650; margin-bottom: 4px; }
+  .drop span { color: var(--muted); }
+
+  .player { position: relative; max-width: 100%; max-height: 100%; display: none; line-height: 0; }
+  .player video { display: block; max-width: 100%; max-height: calc(100vh - 48px); background: #000; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+  .player canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+  textarea {
+    width: 100%; min-height: 84px; resize: vertical; background: var(--field);
+    border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; font-size: 15px;
+  }
+  textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  .pos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pos button {
+    background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 10px 6px 7px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 13px;
+  }
+  .pos .frame { width: 40px; height: 52px; border: 1.5px solid var(--muted); border-radius: 5px; display: flex; padding: 5px 4px; }
+  .pos .frame i { display: block; width: 100%; height: 6px; border-radius: 2px; background: var(--muted); }
+  .pos [data-pos=top] .frame { align-items: flex-start; }
+  .pos [data-pos=middle] .frame { align-items: center; }
+  .pos [data-pos=bottom] .frame { align-items: flex-end; }
+  .pos button[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .pos button[aria-pressed=true] .frame { border-color: var(--accent); }
+  .pos button[aria-pressed=true] .frame i { background: var(--accent); }
+
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .row input[type=color] { width: 42px; height: 34px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); cursor: pointer; }
+  .seg { display: flex; flex: 1; background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; }
+  .seg button { flex: 1; background: transparent; border: 0; border-radius: 6px; padding: 5px 4px; font-size: 13px; color: var(--muted); }
+  .seg button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+  .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .list li {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
+    border: 1px solid var(--line); background: var(--field); border-radius: 9px; padding: 7px 8px 7px 11px; cursor: pointer;
+    position: relative; overflow: hidden;
+  }
+  .list li.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .list .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.5px; }
+  .list .st { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .list .st.ok { color: var(--ok); font-weight: 600; } .list .st.err { color: var(--danger); font-weight: 600; }
+  .list .rm { border: 0; background: none; color: var(--muted); width: 24px; height: 24px; border-radius: 6px; font-size: 16px; line-height: 1; }
+  .list .rm:hover:not(:disabled) { background: var(--line); color: var(--text); }
+  .list .rm:disabled { opacity: .3; }
+  .list .fill { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); width: 0; transition: width .2s; }
+  .empty { color: var(--muted); font-size: 13px; border: 1px dashed var(--line); border-radius: 9px; padding: 14px; text-align: center; }
+
+  .btn { width: 100%; border: 0; border-radius: 10px; padding: 11px; font-size: 15px; font-weight: 650; background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow); }
+  .btn:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn:disabled { opacity: .4; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; font-size: 13.5px; padding: 8px; box-shadow: none; }
+  .btn.ghost:hover:not(:disabled) { background: var(--field); }
+  .bar { height: 6px; background: var(--field); border-radius: 4px; overflow: hidden; border: 1px solid var(--line); display: none; }
+  .bar div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .msg { font-size: 13px; color: var(--muted); min-height: 19px; overflow-wrap: anywhere; }
+  .msg.err { color: var(--danger); } .msg.ok { color: var(--ok); }
+
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: 42vh auto; height: auto; min-height: 100vh; }
+    .side { border-left: 0; border-top: 1px solid var(--line); }
+    .player video { max-height: calc(42vh - 48px); }
+  }
+</style>
+<script>
+  // Theme: follows Windows light/dark automatically unless the user picks one.
+  (function () {
+    var saved = null; try { saved = localStorage.getItem('vt-theme'); } catch (e) {}
+    window.__vtMode = saved === 'light' || saved === 'dark' ? saved : 'auto';
+    window.__vtApply = function () {
+      var dark = window.__vtMode === 'dark' || (window.__vtMode === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    };
+    window.__vtApply();
+  })();
+</script>
+</head>
+<body>
+<div class="app">
+  <main class="stage" id="stage">
+    <div class="drop" id="drop" tabindex="0" role="button">
+      <strong>Add your videos</strong>
+      <span>Click to choose one or more videos, or drag and drop them here</span>
+    </div>
+    <div class="player" id="player">
+      <video id="video" controls playsinline></video>
+      <canvas id="overlay"></canvas>
+    </div>
+    <input type="file" id="file" accept="video/*,.mkv,.mov" multiple hidden>
+  </main>
+
+  <aside class="side">
+    <div class="head">
+      <div class="logo">T</div>
+      <h1>VideoText</h1>
+      <button class="theme" id="theme" type="button" title="Switch color theme">Theme: Auto</button>
+    </div>
+
+    <div class="body">
+      <div>
+        <label class="lbl" for="text">Text</label>
+        <textarea id="text" placeholder="Type the text to show on every video…"></textarea>
+      </div>
+
+      <div>
+        <div class="lbl">Position</div>
+        <div class="pos" id="pos">
+          <button type="button" data-pos="top" aria-pressed="false"><span class="frame"><i></i></span>Top</button>
+          <button type="button" data-pos="middle" aria-pressed="false"><span class="frame"><i></i></span>Middle</button>
+          <button type="button" data-pos="bottom" aria-pressed="true"><span class="frame"><i></i></span>Bottom</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="lbl" for="size">Text size</label>
+        <div class="row"><input type="range" id="size" min="2" max="14" step="0.5" value="5.5"></div>
+      </div>
+
+      <div>
+        <div class="lbl">Color and style</div>
+        <div class="row">
+          <input type="color" id="color" value="#ffffff" aria-label="Text color">
+          <div class="seg" id="style">
+            <button type="button" data-style="outline" aria-pressed="true">Outline</button>
+            <button type="button" data-style="box" aria-pressed="false">Background box</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="lbl"><span id="listLabel">Videos</span><button class="link" id="add" type="button">+ Add videos</button></div>
+        <ul class="list" id="list"></ul>
+        <div class="empty" id="empty">No videos added yet</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="bar" id="bar"><div id="barfill"></div></div>
+      <div class="msg" id="msg"></div>
+      <button class="btn" id="export" disabled>Export</button>
+      <button class="btn ghost" id="cancel" style="display:none">Cancel</button>
+    </div>
+  </aside>
+</div>
+
+<script src="mediabunny.min.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const video = $('video'), overlay = $('overlay'), textEl = $('text'), msg = $('msg'), listEl = $('list');
+  const state = { items: [], sel: null, pos: 'bottom', style: 'outline', busy: false, cancel: null, cancelled: false, url: null, nextId: 1 };
+  const FONT = '"Segoe UI", "Nirmala UI", "Noto Sans Bengali", Arial, sans-serif';
+
+  // ---------- theme ----------
+  const themeBtn = $('theme');
+  function showTheme() { themeBtn.textContent = 'Theme: ' + ({ auto: 'Auto', light: 'Light', dark: 'Dark' })[window.__vtMode]; }
+  themeBtn.addEventListener('click', () => {
+    window.__vtMode = ({ auto: 'light', light: 'dark', dark: 'auto' })[window.__vtMode];
+    try { localStorage.setItem('vt-theme', window.__vtMode); } catch (e) {}
+    window.__vtApply(); showTheme();
+  });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => window.__vtApply());
+  showTheme();
+
+  // ---------- text rendering (same code for the preview and for exported videos) ----------
+  const segmenter = (typeof Intl !== 'undefined' && Intl.Segmenter) ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  const graphemes = s => segmenter ? Array.from(segmenter.segment(s), x => x.segment) : Array.from(s);
+
+  function wrapLines(ctx, text, maxW) {
+    const out = [];
+    for (const para of text.replace(/\r/g, '').split('\n')) {
+      const words = para.trim().split(/\s+/).filter(Boolean);
+      if (!words.length) { out.push(''); continue; }
+      let line = '';
+      for (const word of words) {
+        const test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width <= maxW) { line = test; continue; }
+        if (line) { out.push(line); line = ''; }
+        if (ctx.measureText(word).width <= maxW) { line = word; continue; }
+        let part = '';                                  // a single word wider than the video
+        for (const g of graphemes(word)) {
+          if (part && ctx.measureText(part + g).width > maxW) { out.push(part); part = g; }
+          else part += g;
+        }
+        line = part;
+      }
+      out.push(line);
+    }
+    while (out.length && out[out.length - 1] === '') out.pop();
+    while (out.length && out[0] === '') out.shift();
+    return out;
+  }
+
+  function drawText(ctx, W, H, o) {
+    ctx.clearRect(0, 0, W, H);
+    const text = o.text.trim();
+    if (!text) return;
+    const fs = Math.max(10, Math.round(W * o.size / 100));
+    ctx.font = `700 ${fs}px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const lines = wrapLines(ctx, text, W * 0.9);
+    const lh = fs * 1.4;
+    const blockH = lines.length * lh;
+    const margin = Math.round(H * 0.06);
+    let top = o.pos === 'top' ? margin : o.pos === 'middle' ? (H - blockH) / 2 : H - margin - blockH;
+    top = Math.max(0, Math.min(top, H - blockH));
+    const cx = W / 2;
+
+    if (o.style === 'box') {
+      const padX = fs * 0.45;
+      const widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+      const bw = Math.min(W, widest + padX * 2), bh = blockH + fs * 0.3;
+      ctx.fillStyle = 'rgba(0,0,0,0.72)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(cx - bw / 2, top - fs * 0.15, bw, bh, fs * 0.25);
+      else ctx.rect(cx - bw / 2, top - fs * 0.15, bw, bh);
+      ctx.fill();
+    }
+    lines.forEach((line, i) => {
+      const y = top + lh * i + lh / 2;
+      if (o.style === 'outline') {
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = Math.max(2, fs * 0.16);
+        ctx.strokeStyle = 'rgba(0,0,0,0.92)';
+        ctx.strokeText(line, cx, y);
+      }
+      ctx.fillStyle = o.color;
+      ctx.fillText(line, cx, y);
+    });
+  }
+
+  const opts = () => ({ text: textEl.value, pos: state.pos, style: state.style, size: +$('size').value, color: $('color').value });
+
+  function refresh() {
+    if (overlay.width) drawText(overlay.getContext('2d'), overlay.width, overlay.height, opts());
+    const n = state.items.length;
+    const btn = $('export');
+    btn.disabled = state.busy || !n || !textEl.value.trim();
+    btn.textContent = n > 1 ? `Export ${n} videos` : 'Export video';
+    $('listLabel').textContent = n ? `Videos (${n})` : 'Videos';
+    $('empty').style.display = n ? 'none' : '';
+  }
+  function setMsg(t, cls) { msg.textContent = t || ''; msg.className = 'msg' + (cls ? ' ' + cls : ''); }
+
+  // ---------- video list ----------
+  function renderList() {
+    listEl.textContent = '';
+    for (const it of state.items) {
+      const li = document.createElement('li');
+      li.className = it.id === state.sel ? 'sel' : '';
+      li.title = it.error || it.file.name;
+      const name = document.createElement('span'); name.className = 'name'; name.textContent = it.file.name;
+      const st = document.createElement('span');
+      st.className = 'st' + (it.status === 'done' ? ' ok' : it.status === 'error' ? ' err' : '');
+      st.textContent = it.status === 'done' ? 'Done' : it.status === 'error' ? 'Failed' : it.status === 'working' ? Math.round(it.progress * 100) + '%'
+        : it.status === 'queued' ? 'Waiting' : (it.dims || '');
+      const rm = document.createElement('button'); rm.className = 'rm'; rm.type = 'button'; rm.textContent = '×';
+      rm.setAttribute('aria-label', 'Remove ' + it.file.name); rm.disabled = state.busy;
+      rm.addEventListener('click', e => { e.stopPropagation(); removeItem(it.id); });
+      const fill = document.createElement('div'); fill.className = 'fill';
+      fill.style.width = it.status === 'working' ? (it.progress * 100).toFixed(1) + '%' : '0';
+      li.append(name, st, rm, fill);
+      li.addEventListener('click', () => select(it.id));
+      listEl.appendChild(li);
+    }
+    refresh();
+  }
+
+  function select(id) {
+    const it = state.items.find(x => x.id === id);
+    if (!it) return;
+    const changed = state.sel !== id;
+    state.sel = id;
+    if (changed) {
+      if (state.url) URL.revokeObjectURL(state.url);
+      state.url = URL.createObjectURL(it.file);
+      video.src = state.url;
+    }
+    $('drop').style.display = 'none';
+    $('player').style.display = 'block';
+    renderList();
+  }
+
+  function addFiles(files) {
+    if (state.busy) return;
+    const vids = Array.from(files || []).filter(f => f.type.startsWith('video/') || /\.(mp4|mov|mkv|webm|m4v|avi|ts)$/i.test(f.name));
+    if (!vids.length) { if (files && files.length) setMsg('Those files are not videos.', 'err'); return; }
+    for (const file of vids) state.items.push({ id: state.nextId++, file, status: 'ready', progress: 0, dims: '', error: '' });
+    setMsg('');
+    if (state.sel == null) select(state.items[0].id); else renderList();
+  }
+
+  function removeItem(id) {
+    if (state.busy) return;
+    state.items = state.items.filter(x => x.id !== id);
+    if (state.sel === id) {
+      state.sel = null;
+      if (state.items.length) select(state.items[0].id);
+      else {
+        video.removeAttribute('src'); video.load();
+        if (state.url) { URL.revokeObjectURL(state.url); state.url = null; }
+        overlay.width = 0;
+        $('player').style.display = 'none'; $('drop').style.display = '';
+      }
+    }
+    renderList();
+  }
+
+  video.addEventListener('loadedmetadata', () => {
+    overlay.width = video.videoWidth || 1280;
+    overlay.height = video.videoHeight || 720;
+    const it = state.items.find(x => x.id === state.sel);
+    if (it) { it.dims = `${video.videoWidth}×${video.videoHeight}`; renderList(); }
+    refresh();
+  });
+  video.addEventListener('error', () => {
+    if (!video.getAttribute('src')) return;
+    if (!overlay.width) { overlay.width = 1280; overlay.height = 720; }
+    setMsg('This video cannot be previewed, but exporting may still work.');
+    refresh();
+  });
+
+  const fileInput = $('file'), stage = $('stage');
+  const pick = () => { if (!state.busy) fileInput.click(); };
+  $('drop').addEventListener('click', pick);
+  $('drop').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+  $('add').addEventListener('click', pick);
+  fileInput.addEventListener('change', () => { addFiles(fileInput.files); fileInput.value = ''; });
+  document.addEventListener('dragover', e => { e.preventDefault(); stage.classList.add('over'); });
+  document.addEventListener('dragleave', e => { if (!e.relatedTarget) stage.classList.remove('over'); });
+  document.addEventListener('drop', e => { e.preventDefault(); stage.classList.remove('over'); addFiles(e.dataTransfer.files); });
+
+  // ---------- controls ----------
+  function pressGroup(groupId, attr, key) {
+    $(groupId).addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || state.busy) return;
+      state[key] = b.dataset[attr];
+      for (const x of $(groupId).querySelectorAll('button')) x.setAttribute('aria-pressed', x === b);
+      refresh();
+    });
+  }
+  pressGroup('pos', 'pos', 'pos');
+  pressGroup('style', 'style', 'style');
+  for (const id of ['text', 'size', 'color']) $(id).addEventListener('input', refresh);
+
+  // ---------- exporting ----------
+  function setBusy(b) {
+    state.busy = b;
+    $('bar').style.display = b ? 'block' : 'none';
+    $('cancel').style.display = b ? '' : 'none';
+    for (const el of document.querySelectorAll('textarea, .pos button, .seg button, input[type=range], input[type=color], #add')) el.disabled = b;
+    renderList();
+  }
+
+  const baseName = n => n.replace(/\.[^.]+$/, '');
+
+  async function uniqueHandle(dir, base, used) {
+    for (let i = 1; ; i++) {
+      const name = `${base}_text${i > 1 ? ` (${i})` : ''}.mp4`;
+      if (used.has(name.toLowerCase())) continue;
+      let exists = true;
+      try { await dir.getFileHandle(name); } catch (e) { exists = false; }
+      if (exists) continue;
+      used.add(name.toLowerCase());
+      return dir.getFileHandle(name, { create: true });
+    }
+  }
+
+  async function exportOne(MB, it, o, dir, used, onProgress) {
+    let writable = null, handle = null, input = null, outName = '';
+    try {
+      input = new MB.Input({ source: new MB.BlobSource(it.file), formats: MB.ALL_FORMATS });
+      const track = await input.getPrimaryVideoTrack();
+      if (!track) throw new Error('No video track found in this file.');
+      const W = track.displayWidth, H = track.displayHeight;
+
+      // Keep roughly the original quality.
+      let bitrate = MB.QUALITY_HIGH;
+      try {
+        const stats = await track.computePacketStats(150);
+        if (stats && stats.averageBitrate > 0) bitrate = Math.round(Math.min(Math.max(stats.averageBitrate * 1.15, 1.5e6), 60e6));
+      } catch (_) {}
+
+      const textLayer = new OffscreenCanvas(W, H);
+      drawText(textLayer.getContext('2d'), W, H, o);
+      const frame = new OffscreenCanvas(W, H);
+      const fctx = frame.getContext('2d', { alpha: false });
+
+      let target;
+      if (dir) {
+        handle = await uniqueHandle(dir, baseName(it.file.name), used);
+        outName = handle.name;
+        writable = await handle.createWritable();
+        target = new MB.StreamTarget(writable, { chunked: true });
+      } else {
+        for (let i = 1; ; i++) {
+          outName = `${baseName(it.file.name)}_text${i > 1 ? ` (${i})` : ''}.mp4`;
+          if (!used.has(outName.toLowerCase())) { used.add(outName.toLowerCase()); break; }
+        }
+        target = new MB.BufferTarget();
+      }
+      const output = new MB.Output({ format: new MB.Mp4OutputFormat(), target });
+
+      const conversion = await MB.Conversion.init({
+        input, output,
+        video: {
+          codec: 'avc', bitrate, forceTranscode: true, allowTransformationMetadata: false,
+          processedWidth: W, processedHeight: H,
+          process: sample => {
+            sample.draw(fctx, 0, 0, W, H);
+            fctx.drawImage(textLayer, 0, 0);
+            return frame;
+          },
+        },
+      });
+      if (!conversion.isValid) throw new Error('This video format cannot be processed on this computer.');
+      conversion.onProgress = onProgress;
+      state.cancel = () => conversion.cancel();
+      if (state.cancelled) throw new Error('cancelled');
+      await conversion.execute();
+      if (state.cancelled) throw new Error('cancelled');
+
+      if (!dir) {
+        const blob = new Blob([target.buffer], { type: 'video/mp4' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = outName;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      }
+      return outName;
+    } catch (e) {
+      if (writable) { try { await writable.abort(); } catch (_) {} }
+      if (handle && dir) { try { await dir.removeEntry(handle.name); } catch (_) {} }
+      throw e;
+    } finally {
+      state.cancel = null;
+      try { input && input.dispose && input.dispose(); } catch (_) {}
+    }
+  }
+
+  async function exportAll() {
+    if (state.busy || !state.items.length) return;
+    if (typeof Mediabunny === 'undefined' || typeof VideoEncoder === 'undefined') {
+      setMsg('Video export is not supported here. Open VideoText in Google Chrome or Microsoft Edge.', 'err');
+      return;
+    }
+    const o = opts();
+    const items = state.items.slice();
+
+    // Ask once for the output folder; files are written straight to disk.
+    let dir = null;
+    if (window.showDirectoryPicker) {
+      try { dir = await window.showDirectoryPicker({ mode: 'readwrite', id: 'videotext-out' }); }
+      catch (e) { if (e && e.name === 'AbortError') return; dir = null; }
+    }
+
+    state.cancelled = false;
+    for (const it of items) { it.status = 'queued'; it.progress = 0; it.error = ''; }
+    setBusy(true);
+    video.pause();
+    const used = new Set();
+    let done = 0, failed = 0;
+    const total = items.length;
+    const overall = p => { $('barfill').style.width = ((done + failed + p) / total * 100).toFixed(1) + '%'; };
+    overall(0);
+
+    for (let i = 0; i < total; i++) {
+      const it = items[i];
+      if (state.cancelled) { it.status = 'ready'; continue; }
+      it.status = 'working'; renderList();
+      setMsg(total > 1 ? `Exporting video ${i + 1} of ${total}…` : 'Exporting…');
+      try {
+        await exportOne(Mediabunny, it, o, dir, used, p => {
+          it.progress = p; overall(p);
+          const li = listEl.children[state.items.indexOf(it)];
+          if (li) { li.querySelector('.st').textContent = Math.round(p * 100) + '%'; li.querySelector('.fill').style.width = (p * 100).toFixed(1) + '%'; }
+        });
+        it.status = 'done'; done++;
+      } catch (e) {
+        if (state.cancelled) it.status = 'ready';
+        else { console.error(e); it.status = 'error'; it.error = (e && e.message) || String(e); failed++; }
+      }
+      overall(0); renderList();
+    }
+
+    setBusy(false);
+    const where = dir ? (dir.name ? `the "${dir.name}" folder` : 'the folder you chose') : 'your Downloads folder';
+    if (state.cancelled) setMsg(done ? `Cancelled. ${done} of ${total} saved to ${where}.` : 'Cancelled.');
+    else if (failed && !done) setMsg(total > 1 ? 'None of the videos could be exported. Hover a video to see why.' : 'Export failed: ' + items[0].error, 'err');
+    else if (failed) setMsg(`${done} saved to ${where}, ${failed} failed. Hover a failed video to see why.`, 'err');
+    else setMsg(total > 1 ? `All ${done} videos saved to ${where}.` : `Saved to ${where}.`, 'ok');
+  }
+
+  $('export').addEventListener('click', exportAll);
+  $('cancel').addEventListener('click', () => {
+    state.cancelled = true;
+    setMsg('Cancelling…');
+    if (state.cancel) Promise.resolve(state.cancel()).catch(() => {});
+  });
+  window.addEventListener('beforeunload', e => { if (state.busy) { e.preventDefault(); e.returnValue = ''; } });
+
+  renderList();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "name": "videotext",
+  "productName": "VideoText",
+  "version": "1.0.0",
+  "description": "Add the same text to the top, middle or bottom of one or many videos, keeping each video's original size.",
+  "author": "CodeWithRoni",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --publish never",
+    "standalone": "node scripts/build-standalone.js"
+  },
+  "devDependencies": {
+    "electron": "^45.3.2",
+    "electron-builder": "^26.18.0"
+  },
+  "build": {
+    "appId": "com.codewithroni.videotext",
+    "productName": "VideoText",
+    "files": ["main.js", "app/**/*"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "VideoText-Setup-${version}.${ext}"
+    },
+    "portable": { "artifactName": "VideoText-Portable-${version}.${ext}" }
+  }
+}
