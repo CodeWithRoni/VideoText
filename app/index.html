@@ -101,6 +101,14 @@
 
   .pos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .pos.four { grid-template-columns: repeat(2, 1fr); }
+  .pos.big { gap: 8px; }
+  .pos.big button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px 7px; border-radius: 9px; }
+  .ico { width: 40px; height: 52px; border: 1.5px solid var(--muted); border-radius: 5px; display: flex; padding: 5px 4px; }
+  .ico i { display: block; width: 100%; height: 6px; border-radius: 2px; background: var(--muted); }
+  .ico.t { align-items: flex-start; } .ico.m { align-items: center; } .ico.b { align-items: flex-end; }
+  .pos button[aria-pressed=true] .ico { border-color: var(--accent); }
+  .pos button[aria-pressed=true] .ico i { background: var(--accent); }
+  .more { display: flex; flex-direction: column; gap: 16px; }
   .pos button { background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 7px 4px; font-size: 13px; }
   .pos button[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
   .seg { display: flex; flex: 1; background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 3px; }
@@ -189,8 +197,8 @@
     </div>
 
     <div class="body" id="body">
-      <div class="grp">
-        <div class="lbl">Layers</div>
+      <div class="grp" id="layersBox" hidden>
+        <div class="lbl">Texts and logo</div>
         <div class="chips" id="layers"></div>
       </div>
 
@@ -548,19 +556,14 @@
       chip.addEventListener('keydown', e => { if (e.key === 'Enter') selectLayer(L.id); });
       box.appendChild(chip);
     }
-    const addT = document.createElement('button'); addT.className = 'chip add'; addT.id = 'addText'; addT.type = 'button'; addT.textContent = '+ Text'; addT.disabled = state.busy;
-    addT.addEventListener('click', () => {
-      const L = newText(), cur = curLayer();
-      if (cur && cur.type === 'text') { for (const k of STYLE_KEYS) L[k] = cur[k]; L.anchor = cur.anchor === 'top' ? 'bottom' : 'top'; }
-      state.layers.push(L); selectLayer(L.id);
-      const ta = propsEl.querySelector('textarea'); if (ta) ta.focus();
-    });
-    box.appendChild(addT);
-    if (!state.layers.some(l => l.type === 'logo')) {
-      const addL = document.createElement('button'); addL.className = 'chip add'; addL.id = 'addLogo'; addL.type = 'button'; addL.textContent = '+ Logo'; addL.disabled = state.busy;
-      addL.addEventListener('click', () => $('logoFile').click());
-      box.appendChild(addL);
-    }
+    $('layersBox').hidden = state.layers.length < 2;
+  }
+  function addTextLayer() {
+    if (state.busy) return;
+    const L = newText(), cur = curLayer();
+    if (cur && cur.type === 'text') { for (const k of STYLE_KEYS) L[k] = cur[k]; L.anchor = cur.anchor === 'top' ? 'bottom' : 'top'; }
+    state.layers.push(L); selectLayer(L.id);
+    const ta = propsEl.querySelector('textarea'); if (ta) ta.focus();
   }
   function selectLayer(id) { if (state.busy) return; state.selLayer = id; renderLayers(); buildPanel(); draw(); }
   function removeLayer(id) {
@@ -584,48 +587,65 @@
 
   // ---------- properties panel ----------
   const TIMING = `
-    <details id="timingBox">
-      <summary>Timing and fade</summary>
-      <div class="grp">
+      <div class="grp"><div class="lbl">Timing and fade</div>
         <div class="seg"><button type="button" data-set="timed:false">Whole video</button><button type="button" data-set="timed:true">Custom time</button></div>
         <div class="row" data-show="timed"><span class="mini">From</span><input type="number" data-k="start" min="0" step="0.1"><span class="mini">s &nbsp;to</span><input type="number" data-k="end" min="0" step="0.1" placeholder="end"><span class="mini">s</span></div>
-        <div class="row"><span class="mini">Fade in</span><input type="number" data-k="fadeIn" min="0" max="10" step="0.1"><span class="mini">s &nbsp;Fade out</span><input type="number" data-k="fadeOut" min="0" max="10" step="0.1"><span class="mini">s</span></div>
-      </div>
-    </details>`;
+        <div class="row"><span class="mini">Fade in</span><input type="number" data-k="fadeIn" min="0" max="10" step="0.1"><span class="mini">s &nbsp;Fade out</span><input type="number" data-k="fadeOut" min="0" max="10" step="0.1"><span class="mini">s</span></div></div>
+      <div class="row"><button class="btn ghost" id="addText" type="button" style="flex:1">+ Another text</button><button class="btn ghost" id="addLogo" type="button" style="flex:1">+ Logo</button></div>`;
   const TEXT_PANEL = `
     <div class="grp"><label class="lbl" for="p-text">Text</label>
       <textarea id="p-text" data-k="text" placeholder="Type the text to show on every video…"></textarea></div>
-    <div class="grp"><div class="lbl">Font <button class="link" id="allFonts" type="button" hidden>Show all installed fonts</button></div>
-      <div class="row"><select data-k="font" aria-label="Font"></select>
-        <button class="tog" type="button" data-toggle="bold" title="Bold" aria-label="Bold"><b>B</b></button>
-        <button class="tog" type="button" data-toggle="italic" title="Italic" aria-label="Italic"><i>I</i></button></div>
-      <div class="row"><span class="mini">Size</span><input type="range" data-k="size" min="1.5" max="16" step="0.25" aria-label="Text size">
-        <input type="color" data-k="color" aria-label="Text color"></div></div>
-    <div class="grp"><div class="lbl">Position <span class="hint">or drag the text in the preview</span></div>
-      <div class="pos"><button type="button" data-set="anchor:top">Top</button><button type="button" data-set="anchor:middle">Middle</button><button type="button" data-set="anchor:bottom">Bottom</button></div>
-      <div class="seg"><button type="button" data-set="align:left">Left</button><button type="button" data-set="align:center">Center</button><button type="button" data-set="align:right">Right</button></div></div>
-    <div class="grp"><div class="lbl">Effects</div>
-      <div class="row"><label class="chk"><input type="checkbox" data-k="outline">Outline</label>
-        <input type="color" data-k="outlineColor" data-show="outline" aria-label="Outline color">
-        <input type="range" data-k="outlineWidth" data-show="outline" min="2" max="32" step="1" aria-label="Outline thickness"></div>
-      <div class="row"><label class="chk"><input type="checkbox" data-k="box">Background</label>
-        <input type="color" data-k="boxColor" data-show="box" aria-label="Background color">
-        <input type="range" data-k="boxOpacity" data-show="box" min="10" max="100" step="5" aria-label="Background opacity"></div>
-      <div class="row"><label class="chk"><input type="checkbox" data-k="shadow">Shadow</label></div></div>` + TIMING;
+    <div class="grp"><div class="lbl">Position</div>
+      <div class="pos big">
+        <button type="button" data-set="anchor:top"><span class="ico t"><i></i></span>Top</button>
+        <button type="button" data-set="anchor:middle"><span class="ico m"><i></i></span>Middle</button>
+        <button type="button" data-set="anchor:bottom"><span class="ico b"><i></i></span>Bottom</button></div></div>
+    <div class="grp"><label class="lbl" for="p-size">Text size</label>
+      <div class="row"><input type="range" id="p-size" data-k="size" min="1.5" max="16" step="0.25"></div></div>
+    <div class="grp"><div class="lbl">Color and style</div>
+      <div class="row"><input type="color" data-k="color" aria-label="Text color">
+        <div class="seg"><button type="button" data-style="outline">Outline</button><button type="button" data-style="box">Background box</button></div></div></div>
+    <details id="moreBox">
+      <summary>More options</summary>
+      <div class="more">
+      <div class="grp"><div class="lbl">Font <button class="link" id="allFonts" type="button" hidden>Show all installed fonts</button></div>
+        <div class="row"><select data-k="font" aria-label="Font"></select>
+          <button class="tog" type="button" data-toggle="bold" title="Bold" aria-label="Bold"><b>B</b></button>
+          <button class="tog" type="button" data-toggle="italic" title="Italic" aria-label="Italic"><i>I</i></button></div></div>
+      <div class="grp"><div class="lbl">Alignment <span class="hint">you can also drag the text in the preview</span></div>
+        <div class="seg"><button type="button" data-set="align:left">Left</button><button type="button" data-set="align:center">Center</button><button type="button" data-set="align:right">Right</button></div></div>
+      <div class="grp"><div class="lbl">Effects</div>
+        <div class="row"><label class="chk"><input type="checkbox" data-k="outline">Outline</label>
+          <input type="color" data-k="outlineColor" data-show="outline" aria-label="Outline color">
+          <input type="range" data-k="outlineWidth" data-show="outline" min="2" max="32" step="1" aria-label="Outline thickness"></div>
+        <div class="row"><label class="chk"><input type="checkbox" data-k="box">Background</label>
+          <input type="color" data-k="boxColor" data-show="box" aria-label="Background color">
+          <input type="range" data-k="boxOpacity" data-show="box" min="10" max="100" step="5" aria-label="Background opacity"></div>
+        <div class="row"><label class="chk"><input type="checkbox" data-k="shadow">Shadow</label></div></div>` + TIMING + `
+      </div>
+    </details>`;
   const LOGO_PANEL = `
     <div class="grp"><div class="lbl">Logo <button class="link" id="logoReplace" type="button">Replace image</button></div>
       <div class="mini" id="logoName"></div>
       <div class="row"><span class="mini" style="width:56px">Size</span><input type="range" data-k="size" min="3" max="60" step="0.5" aria-label="Logo size"></div>
       <div class="row"><span class="mini" style="width:56px">Opacity</span><input type="range" data-k="opacity" min="10" max="100" step="5" aria-label="Logo opacity"></div></div>
     <div class="grp"><div class="lbl">Position <span class="hint">or drag the logo in the preview</span></div>
-      <div class="pos four"><button type="button" data-set="anchor:tl">Top left</button><button type="button" data-set="anchor:tr">Top right</button><button type="button" data-set="anchor:bl">Bottom left</button><button type="button" data-set="anchor:br">Bottom right</button></div></div>` + TIMING;
+      <div class="pos four"><button type="button" data-set="anchor:tl">Top left</button><button type="button" data-set="anchor:tr">Top right</button><button type="button" data-set="anchor:bl">Bottom left</button><button type="button" data-set="anchor:br">Bottom right</button></div></div>
+    <details id="moreBox">
+      <summary>More options</summary>
+      <div class="more">` + TIMING + `
+      </div>
+    </details>`;
 
-  let timingOpen = false;
+  let moreOpen = false;
   function buildPanel() {
     const L = curLayer(); if (!L) { propsEl.textContent = ''; return; }
     propsEl.innerHTML = L.type === 'logo' ? LOGO_PANEL : TEXT_PANEL;
-    const tb = $('timingBox'); tb.open = timingOpen || L.timed || L.fadeIn > 0 || L.fadeOut > 0;
-    tb.addEventListener('toggle', () => { timingOpen = tb.open; });
+    const mb = $('moreBox'); mb.open = moreOpen;
+    mb.addEventListener('toggle', () => { moreOpen = mb.open; });
+    $('addText').addEventListener('click', addTextLayer);
+    $('addLogo').addEventListener('click', () => $('logoFile').click());
+    $('addLogo').hidden = state.layers.some(l => l.type === 'logo');
     if (L.type === 'logo') { $('logoName').textContent = L.name || ''; $('logoReplace').addEventListener('click', () => $('logoFile').click()); }
     else { fillFonts(); $('allFonts').addEventListener('click', async () => { if (!(await loadAllFonts())) setMsg('Could not read the installed fonts on this computer.', 'err'); }); }
     syncPanel();
@@ -643,6 +663,10 @@
     }
     for (const el of propsEl.querySelectorAll('[data-toggle]')) { el.setAttribute('aria-pressed', !!L[el.dataset.toggle]); el.disabled = state.busy; }
     for (const el of propsEl.querySelectorAll('[data-show]')) el.hidden = !L[el.dataset.show];
+    for (const el of propsEl.querySelectorAll('[data-style]')) {
+      el.setAttribute('aria-pressed', el.dataset.style === 'box' ? !!L.box && !L.outline : !!L.outline && !L.box); el.disabled = state.busy;
+    }
+    for (const id of ['addText', 'addLogo']) if ($(id)) $(id).disabled = state.busy;
   }
   propsEl.addEventListener('input', e => {
     const el = e.target, k = el.dataset && el.dataset.k, L = curLayer(); if (!k || !L) return;
@@ -657,6 +681,7 @@
     const b = e.target.closest('button'), L = curLayer(); if (!b || !L || state.busy) return;
     if (b.dataset.set) { const [k, v] = b.dataset.set.split(':'); L[k] = v === 'true' ? true : v === 'false' ? false : v; }
     else if (b.dataset.toggle) L[b.dataset.toggle] = !L[b.dataset.toggle];
+    else if (b.dataset.style) { L.outline = b.dataset.style === 'outline'; L.box = b.dataset.style === 'box'; }
     else return;
     syncPanel(); refresh();
   });
