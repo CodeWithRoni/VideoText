@@ -458,7 +458,7 @@
     const all = Array.from(files || []);
     const vids = all.filter(f => f.type.startsWith('video/') || /\.(mp4|mov|mkv|webm|m4v|avi|ts)$/i.test(f.name));
     if (!vids.length) { if (all.length) setMsg('Those files are not videos.', 'err'); return; }
-    for (const file of vids) state.items.push({ id: state.nextId++, file, caption: null, status: 'ready', progress: 0, error: '' });
+    for (const file of vids) state.items.push({ id: state.nextId++, file, path: native ? native.pathFor(file) : '', caption: null, status: 'ready', progress: 0, error: '' });
     setMsg(''); $('openFolder').hidden = true;
     if (state.sel == null) select(state.items[0].id); else renderList();
   }
@@ -517,16 +517,22 @@
   async function chooseDest(MB) {
     const usedNames = new Set();
     if (native) {
-      const dir = await native.pickFolder();
-      if (!dir) return null;
-      return {
-        label: `the "${dir.split(/[\\/]/).filter(Boolean).pop() || dir}" folder`, open: () => native.openFolder(dir),
-        async create(base) {
+      // Desktop app: every video is saved in the same folder it was added from. No folder dialog.
+      const dirs = [];
+      const dest = {
+        label: 'the same folder as the videos', open: () => { if (dirs.length) native.openFolder(dirs[dirs.length - 1]); },
+        async create(base, it) {
+          if (!it.path) throw new Error('The folder of this video could not be found. Add it again from its folder.');
+          const dir = await native.sourceFolder(it.path);
+          if (!dirs.includes(dir)) dirs.push(dir);
+          if (dirs.length === 1) dest.label = `the "${dir.split(/[\\/]/).filter(Boolean).pop() || dir}" folder`;
+          else dest.label = 'the same folders as the videos';
           const f = await native.createFile(dir, base + '.mp4');
           const writable = new WritableStream({ write: c => native.write(f.id, c.data, c.position), close: () => native.close(f.id), abort: () => native.discard(f.id) });
           return { name: f.name, target: new MB.StreamTarget(writable, { chunked: true }), finish: async () => {}, discard: () => native.discard(f.id) };
         },
       };
+      return dest;
     }
     if (window.showDirectoryPicker) {
       let dir = null;
@@ -575,7 +581,7 @@
       const frame = new OffscreenCanvas(W, H);
       const fctx = frame.getContext('2d', { alpha: false });
 
-      out = await dest.create(fileBase(text));
+      out = await dest.create(fileBase(text), it);
       const output = new MB.Output({ format: new MB.Mp4OutputFormat(), target: out.target });
       // File details (metadata), all true for this video: its caption, the code, the source file and the export time.
       const now = new Date();

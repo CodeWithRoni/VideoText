@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 let win = null;
-const allowedDirs = new Set();        // folders the user picked in this session
+const allowedDirs = new Set();        // folders of the videos the user added in this session
 const openFiles = new Map();          // id -> { handle, file }
 let nextId = 1;
 
@@ -49,18 +49,15 @@ function createWindow() {
 }
 
 // ---------- saving files ----------
-ipcMain.handle('pick-folder', async () => {
-  let dir = null;
-  if (!app.isPackaged && process.env.CODECAPTION_TEST_DIR) dir = process.env.CODECAPTION_TEST_DIR;   // automated tests only
-  else {
-    const r = await dialog.showOpenDialog(win, {
-      title: 'Choose where to save the videos',
-      buttonLabel: 'Save here',
-      properties: ['openDirectory', 'createDirectory'],
-    });
-    if (!r.canceled && r.filePaths[0]) dir = r.filePaths[0];
-  }
-  if (dir) allowedDirs.add(path.resolve(dir));
+// Exports go next to the video they come from: allow writing in the folder of a video the user added.
+const VIDEO_EXT = /\.(mp4|mov|mkv|webm|m4v|avi|ts)$/i;
+ipcMain.handle('source-folder', async (_e, filePath) => {
+  const file = path.resolve(String(filePath || ''));
+  if (!VIDEO_EXT.test(file)) throw new Error('Not a video file.');
+  const st = await fs.promises.stat(file);
+  if (!st.isFile()) throw new Error('Not a video file.');
+  const dir = path.dirname(file);
+  allowedDirs.add(dir);
   return dir;
 });
 
