@@ -3,179 +3,101 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VideoText</title>
+<title>CodeCaption</title>
 <style>
   :root {
-    color-scheme: light;
-    --bg: #f3f5f9; --stage: #e6eaf1; --panel: #ffffff; --field: #f6f8fb; --line: #d9dfe9;
-    --text: #131a26; --muted: #5d6b80; --accent: #2f5bea; --accent-hover: #2449c4; --accent-ink: #ffffff;
-    --accent-soft: rgba(47,91,234,.10); --danger: #cf3a3a; --ok: #178a52; --shadow: 0 1px 2px rgba(16,24,40,.06);
-  }
-  :root[data-theme=dark] {
     color-scheme: dark;
-    --bg: #0e1218; --stage: #090c11; --panel: #151b24; --field: #0f141b; --line: #273140;
-    --text: #e7ecf3; --muted: #8e9bb0; --accent: #6b8cff; --accent-hover: #86a1ff; --accent-ink: #0a1022;
-    --accent-soft: rgba(107,140,255,.14); --danger: #ff7b72; --ok: #4fd08c; --shadow: none;
+    --bg: #0d1117; --stage: #080b10; --panel: #141a23; --field: #0f141b; --line: #263040;
+    --text: #e8edf4; --muted: #8995a8; --accent: #f5b82e; --accent-hover: #ffc94d; --accent-ink: #1a1203;
+    --accent-soft: rgba(245,184,46,.12); --danger: #ff7b72; --ok: #4fd08c;
   }
   * { box-sizing: border-box; }
   html, body { height: 100%; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 14px/1.5 "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
-  }
-  button, textarea, input, select { font: inherit; color: inherit; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 "Segoe UI Variable Text", "Segoe UI", Inter, system-ui, sans-serif; }
+  button, input { font: inherit; color: inherit; }
   button { cursor: pointer; }
-  button:disabled, input:disabled, select:disabled, textarea:disabled { cursor: not-allowed; opacity: .55; }
+  button:disabled, input:disabled { cursor: not-allowed; opacity: .5; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  [hidden] { display: none !important; }
 
-  .app { display: grid; grid-template-columns: minmax(0, 1fr) 400px; height: 100vh; }
-  .stage { background: var(--stage); display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-  .view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; min-width: 0; min-height: 0; }
-  .vbar { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--line); }
-  .vbar .btn { flex: none; white-space: nowrap; }
-  .sep { border-top: 1px solid var(--line); padding-top: 14px; }
-  .side { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
-  .head { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
-  .logo { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 15px; }
-  .head h1 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: -.01em; flex: 1; }
-  .theme { border: 1px solid var(--line); background: var(--field); border-radius: 8px; padding: 5px 10px; font-size: 12.5px; color: var(--muted); }
-  .theme:hover { color: var(--text); }
-  .body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
-  .foot { border-top: 1px solid var(--line); padding: 12px 20px 16px; display: flex; flex-direction: column; gap: 9px; }
+  .app { display: grid; grid-template-columns: minmax(0, 1fr) 380px; height: 100vh; }
 
-  .lbl, summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-  .lbl .hint { text-transform: none; letter-spacing: 0; font-weight: 400; }
-  .link { text-transform: none; letter-spacing: 0; font-weight: 500; background: none; border: 0; color: var(--accent); padding: 0; font-size: 13px; }
-  details { border-top: 1px solid var(--line); padding-top: 12px; }
-  details > summary { cursor: pointer; margin-bottom: 0; list-style: none; }
-  details > summary::-webkit-details-marker { display: none; }
-  details > summary::after { content: "+"; font-size: 16px; font-weight: 400; }
-  details[open] > summary::after { content: "–"; }
-  details[open] > summary { margin-bottom: 10px; }
-  .grp { display: flex; flex-direction: column; gap: 8px; }
-  .grp > .lbl { margin-bottom: 0; }
-  #props { display: flex; flex-direction: column; gap: 16px; }
-
-  .drop {
-    width: min(540px, 100%); border: 1.5px dashed var(--line); border-radius: 14px; padding: 54px 24px; background: var(--panel);
-    text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
-  }
+  /* left: preview */
+  .stage { background: var(--stage); display: flex; align-items: center; justify-content: center; padding: 24px; min-width: 0; min-height: 0; }
+  .drop { width: min(520px, 100%); border: 1.5px dashed var(--line); border-radius: 16px; padding: 64px 24px; text-align: center; cursor: pointer; background: var(--panel); transition: border-color .15s, background .15s; }
   .drop:hover, .stage.over .drop { border-color: var(--accent); background: var(--accent-soft); }
-  .drop strong { display: block; font-size: 18px; font-weight: 650; margin-bottom: 4px; }
+  .drop strong { display: block; font-size: 19px; font-weight: 650; margin-bottom: 4px; }
   .drop span { color: var(--muted); }
-
-  .player { display: none; flex-direction: column; gap: 10px; max-width: 100%; max-height: 100%; align-items: center; }
+  .player { display: none; flex-direction: column; align-items: center; gap: 12px; max-width: 100%; max-height: 100%; }
   .frame { position: relative; line-height: 0; max-width: 100%; }
-  .frame video { display: block; max-width: 100%; max-height: calc(100vh - 210px); background: #000; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
-  .frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: default; border-radius: 8px; }
-  .ctrl { display: flex; align-items: center; gap: 10px; width: min(100%, 560px); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px 6px 6px; }
-  .ctrl button { width: 32px; height: 32px; border-radius: 7px; border: 0; background: transparent; display: grid; place-items: center; font-size: 14px; }
+  .frame video { display: block; max-width: 100%; max-height: calc(100vh - 110px); background: #000; border-radius: 10px; }
+  .frame canvas { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 10px; touch-action: none; }
+  .stage.over .frame video { outline: 2px dashed var(--accent); outline-offset: 4px; }
+  .ctrl { display: flex; align-items: center; gap: 10px; width: min(100%, 520px); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 5px 12px 5px 5px; }
+  .ctrl button { width: 32px; height: 32px; border: 0; border-radius: 7px; background: transparent; }
   .ctrl button:hover { background: var(--field); }
-  .ctrl input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; }
+  .ctrl input { flex: 1; accent-color: var(--accent); min-width: 0; }
   .ctrl .time { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-  textarea, select, input[type=number], input[type=text] {
-    background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; min-width: 0;
-  }
-  textarea { width: 100%; min-height: 76px; resize: vertical; font-size: 15px; padding: 9px 11px; }
-  textarea:focus, select:focus, input[type=number]:focus, input[type=text]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-  select { flex: 1; }
-  input[type=number] { width: 68px; }
-  input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; }
-  input[type=color] { width: 38px; height: 32px; padding: 2px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); cursor: pointer; flex: none; }
-  input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
-  .row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
-  .mini { font-size: 13px; color: var(--muted); white-space: nowrap; }
-  .chk { display: flex; align-items: center; gap: 7px; font-size: 13.5px; width: 104px; flex: none; cursor: pointer; }
-  .tog { width: 34px; height: 34px; border: 1px solid var(--line); background: var(--field); border-radius: 8px; flex: none; font-size: 15px; font-family: Georgia, serif; }
-  .tog[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  /* right: controls */
+  .side { background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  .head { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .logo { width: 28px; height: 28px; border-radius: 7px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; }
+  .head h1 { font-size: 16px; margin: 0; font-weight: 650; }
+  .body { flex: 1; overflow-y: auto; padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+  .lbl { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .lbl .hint { text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .code { width: 100%; background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; font-size: 20px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-family: Consolas, "Cascadia Mono", monospace; }
+  .code:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .left { font-size: 12.5px; color: var(--muted); margin-top: 8px; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--field); border-radius: 8px; padding: 5px 6px 5px 10px; font-size: 13px; max-width: 100%; cursor: pointer; }
-  .chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
-  .chip.sel { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-  .chip .x { border: 0; background: none; color: var(--muted); width: 20px; height: 20px; border-radius: 5px; padding: 0; line-height: 1; font-size: 15px; }
-  .chip .x:hover { background: var(--line); color: var(--text); }
-  .chip.add { border-style: dashed; color: var(--muted); padding: 5px 10px; }
-  .chip.add:hover { color: var(--accent); border-color: var(--accent); }
-
-  .pos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .pos.four { grid-template-columns: repeat(2, 1fr); }
-  .pos.big { gap: 8px; }
-  .pos.big button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px 7px; border-radius: 9px; }
-  .ico { width: 40px; height: 52px; border: 1.5px solid var(--muted); border-radius: 5px; display: flex; padding: 5px 4px; }
-  .ico i { display: block; width: 100%; height: 6px; border-radius: 2px; background: var(--muted); }
-  .ico.t { align-items: flex-start; } .ico.m { align-items: center; } .ico.b { align-items: flex-end; }
-  .pos button[aria-pressed=true] .ico { border-color: var(--accent); }
-  .pos button[aria-pressed=true] .ico i { background: var(--accent); }
-  .more { display: flex; flex-direction: column; gap: 16px; }
-  .pos button { background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 7px 4px; font-size: 13px; }
-  .pos button[aria-pressed=true] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-  .seg { display: flex; flex: 1; background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 3px; }
-  .seg button { flex: 1; background: transparent; border: 0; border-radius: 6px; padding: 4px; font-size: 13px; color: var(--muted); }
-  .seg button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
-
-  .list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; max-height: 78px; overflow-y: auto; }
-  .list li {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
-    border: 1px solid var(--line); background: var(--field); border-radius: 9px; padding: 4px 6px 4px 11px; cursor: pointer;
-    position: relative; overflow: hidden; max-width: 260px;
-  }
-  .list li.sel { border-color: var(--accent); background: var(--accent-soft); }
-  .list .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13.5px; }
-  .list .st { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .list .st.ok { color: var(--ok); font-weight: 600; } .list .st.err { color: var(--danger); font-weight: 600; }
-  .list .rm { border: 0; background: none; color: var(--muted); width: 24px; height: 24px; border-radius: 6px; font-size: 16px; line-height: 1; }
-  .list .rm:hover:not(:disabled) { background: var(--line); color: var(--text); }
-  .list .fill { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); width: 0; transition: width .2s; }
-
-  .btn { width: 100%; border: 0; border-radius: 10px; padding: 11px; font-size: 15px; font-weight: 650; background: var(--accent); color: var(--accent-ink); box-shadow: var(--shadow); }
+  .btn { width: 100%; border: 0; border-radius: 10px; padding: 11px; font-size: 15px; font-weight: 650; background: var(--accent); color: var(--accent-ink); }
   .btn:hover:not(:disabled) { background: var(--accent-hover); }
-  .btn:disabled { opacity: .4; }
-  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; font-size: 13.5px; padding: 7px 10px; box-shadow: none; width: auto; }
+  .btn.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; font-size: 13.5px; padding: 8px 10px; }
   .btn.ghost:hover:not(:disabled) { background: var(--field); }
-  .btn.wide { width: 100%; }
-  .bar { height: 6px; background: var(--field); border-radius: 4px; overflow: hidden; border: 1px solid var(--line); display: none; }
+  .gen { margin-top: 10px; }
+
+  .vids { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .vid { position: relative; overflow: hidden; border: 1px solid var(--line); background: var(--field); border-radius: 10px; padding: 9px 10px 10px 12px; cursor: pointer; }
+  .vid.sel { border-color: var(--accent); }
+  .vid .top { display: flex; align-items: center; gap: 8px; }
+  .vid .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: var(--muted); }
+  .vid .st { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .vid .st.ok { color: var(--ok); font-weight: 600; } .vid .st.err { color: var(--danger); font-weight: 600; }
+  .vid .rm { border: 0; background: none; color: var(--muted); width: 22px; height: 22px; border-radius: 6px; font-size: 16px; line-height: 1; padding: 0; }
+  .vid .rm:hover:not(:disabled) { background: var(--line); color: var(--text); }
+  .vid .title { display: flex; align-items: flex-start; gap: 8px; margin-top: 6px; }
+  .vid .title p { flex: 1; margin: 0; font-size: 13.5px; line-height: 1.4; overflow-wrap: anywhere; }
+  .vid .title p.none { color: var(--muted); font-style: italic; }
+  .vid .title p b { color: var(--accent); font-weight: 650; }
+  .copy { flex: none; border: 1px solid var(--line); background: var(--panel); border-radius: 7px; padding: 3px 9px; font-size: 12px; }
+  .copy:hover { border-color: var(--accent); color: var(--accent); }
+  .vid .fill { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--accent); width: 0; transition: width .2s; }
+
+  .foot { border-top: 1px solid var(--line); padding: 12px 20px 16px; display: flex; flex-direction: column; gap: 9px; }
+  .bar { height: 6px; background: var(--field); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; display: none; }
   .bar div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
   .msg { font-size: 13px; color: var(--muted); min-height: 19px; overflow-wrap: anywhere; }
   .msg.err { color: var(--danger); } .msg.ok { color: var(--ok); }
-  [hidden] { display: none !important; }
 
-  @media (max-width: 880px) {
-    .app { grid-template-columns: 1fr; grid-template-rows: 46vh auto; height: auto; min-height: 100vh; }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: 55vh auto; height: auto; }
     .side { border-left: 0; border-top: 1px solid var(--line); }
-    .frame video { max-height: calc(46vh - 190px); }
+    .frame video { max-height: calc(55vh - 110px); }
   }
 </style>
-<script>
-  // Theme: follows Windows light/dark automatically unless the user picks one.
-  (function () {
-    var saved = null; try { saved = localStorage.getItem('vt-theme'); } catch (e) {}
-    window.__vtMode = saved === 'light' || saved === 'dark' ? saved : 'auto';
-    window.__vtApply = function () {
-      var dark = window.__vtMode === 'dark' || (window.__vtMode === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    };
-    window.__vtApply();
-  })();
-</script>
 </head>
 <body>
 <div class="app">
   <main class="stage" id="stage">
-    <div class="vbar" id="vbar" hidden>
-      <ul class="list" id="list"></ul>
-      <button class="btn ghost" id="add" type="button">+ Add videos</button>
-    </div>
-    <div class="view">
     <div class="drop" id="drop" tabindex="0" role="button">
       <strong>Add your videos</strong>
-      <span>Click to choose one or more videos, or drag and drop them here</span>
+      <span>Click to choose videos, or drag and drop them here</span>
     </div>
     <div class="player" id="player">
       <div class="frame">
         <video id="video" playsinline></video>
-        <canvas id="overlay"></canvas>
+        <canvas id="overlay" title="Drag the text up or down to move it on this video"></canvas>
       </div>
       <div class="ctrl">
         <button type="button" id="play" aria-label="Play">▶</button>
@@ -184,341 +106,232 @@
         <button type="button" id="mute" aria-label="Mute">🔊</button>
       </div>
     </div>
-    </div>
     <input type="file" id="file" accept="video/*,.mkv,.mov" multiple hidden>
-    <input type="file" id="logoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
   </main>
 
   <aside class="side">
-    <div class="head">
-      <div class="logo">T</div>
-      <h1>VideoText</h1>
-      <button class="theme" id="theme" type="button" title="Switch color theme">Theme: Auto</button>
-    </div>
+    <div class="head"><div class="logo">C</div><h1>CodeCaption</h1></div>
 
-    <div class="body" id="body">
-      <div class="grp" id="layersBox" hidden>
-        <div class="lbl">Texts and logo</div>
-        <div class="chips" id="layers"></div>
+    <div class="body">
+      <div>
+        <label class="lbl" for="code">Referral code</label>
+        <input class="code" id="code" type="text" maxlength="20" placeholder="e.g. UMNZQ2H5" autocomplete="off" spellcheck="false">
+        <button class="btn gen" id="gen" type="button">Generate</button>
+        <div class="left" id="left"></div>
       </div>
 
-      <div id="props"></div>
-
+      <div>
+        <div class="lbl">Videos <span class="hint" id="count"></span></div>
+        <ul class="vids" id="vids"></ul>
+        <button class="btn ghost" id="add" type="button" style="width:100%;margin-top:8px">+ Add videos</button>
+      </div>
     </div>
 
     <div class="foot">
-      <div class="grp">
-        <div class="lbl">Export settings</div>
-        <div class="row"><span class="mini" style="width:72px">File name</span>
-          <input type="text" id="outName" placeholder="Empty = keep each video's own name" maxlength="60" style="flex:1">
-        </div>
-        <div class="mini" id="nameSample"></div>
-        <div class="row"><span class="mini" style="width:72px">Quality</span>
-          <select id="quality">
-            <option value="original">Same as original</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="small">Small file</option>
-          </select>
-        </div>
-      </div>
       <div class="bar" id="bar"><div id="barfill"></div></div>
       <div class="msg" id="msg"></div>
       <button class="btn" id="export" disabled>Export</button>
-      <button class="btn ghost wide" id="cancel" hidden>Cancel</button>
-      <button class="btn ghost wide" id="openFolder" hidden>Open folder</button>
+      <button class="btn ghost" id="cancel" hidden>Cancel</button>
+      <button class="btn ghost" id="openFolder" hidden>Open folder</button>
     </div>
   </aside>
 </div>
 
+<script src="captions.js"></script>
 <script src="mediabunny.min.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const video = $('video'), overlay = $('overlay'), msg = $('msg'), listEl = $('list'), propsEl = $('props');
-  const native = window.videotextNative || null;      // present only in the desktop app
+  const video = $('video'), overlay = $('overlay'), msg = $('msg'), vidsEl = $('vids'), codeEl = $('code');
+  const native = window.appNative || null;            // present only in the desktop app
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   };
-  const state = {
-    items: [], sel: null, layers: [], selLayer: null, busy: false, cancel: null, cancelled: false, url: null, nextId: 1,
-    quality: store.get('vt-quality', 'original'), outName: '', lastDest: null,
-  };
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const FALLBACK = '"Segoe UI", "Nirmala UI", "Noto Sans Bengali", Arial, sans-serif';
+  const CAPTIONS = window.CAPTIONS || [];
+  const state = { items: [], sel: null, busy: false, cancel: null, cancelled: false, url: null, nextId: 1, lastDest: null,
+    code: store.get('cc-code', '') };
 
-  // ---------- theme ----------
-  const themeBtn = $('theme');
-  const showTheme = () => { themeBtn.textContent = 'Theme: ' + ({ auto: 'Auto', light: 'Light', dark: 'Dark' })[window.__vtMode]; };
-  themeBtn.addEventListener('click', () => {
-    window.__vtMode = ({ auto: 'light', light: 'dark', dark: 'auto' })[window.__vtMode];
-    try { localStorage.setItem('vt-theme', window.__vtMode); } catch (e) {}
-    window.__vtApply(); showTheme();
-  });
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => window.__vtApply());
-  showTheme();
-
-  // ---------- fonts ----------
-  const CURATED = ['Segoe UI', 'Arial', 'Calibri', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Bahnschrift', 'Impact', 'Georgia', 'Times New Roman',
-    'Cambria', 'Comic Sans MS', 'Courier New', 'Consolas', 'Nirmala UI', 'Vrinda', 'SolaimanLipi', 'Kalpurush', 'Siyam Rupali',
-    'Noto Sans Bengali', 'Hind Siliguri', 'Inter', 'Roboto', 'Open Sans', 'Montserrat', 'Poppins', 'Helvetica Neue', 'DejaVu Sans', 'Liberation Sans'];
-  const probe = document.createElement('canvas').getContext('2d');
-  function fontInstalled(name) {
-    const sample = 'mmmmmmmmlliWW@# অআক';
-    return ['monospace', 'serif'].some(base => {
-      probe.font = `40px ${base}`; const a = probe.measureText(sample).width;
-      probe.font = `40px "${name}", ${base}`; return probe.measureText(sample).width !== a;
-    });
+  // ---------- captions: every caption is used only once, ever ----------
+  // Used captions are remembered on this computer, so they never come back (even after closing the app).
+  const USED_KEY = 'cc-used-' + (window.CAPTIONS_ID || 'v1');     // a new caption list starts its own record
+  const used = new Set(store.get(USED_KEY, []));
+  let unused = [];
+  for (let i = 0; i < CAPTIONS.length; i++) if (!used.has(i)) unused.push(i);
+  function takeCaption() {
+    if (!unused.length) return null;
+    const k = Math.floor(Math.random() * unused.length);
+    const idx = unused[k];
+    unused[k] = unused[unused.length - 1]; unused.pop();
+    used.add(idx);
+    return idx;
   }
-  let fonts = CURATED.filter(fontInstalled);
-  if (!fonts.length) fonts = ['sans-serif'];
-  let allFontsLoaded = false;
-  async function loadAllFonts() {
-    if (allFontsLoaded || !window.queryLocalFonts) return false;
-    try {
-      const list = await window.queryLocalFonts();
-      const fam = [...new Set(list.map(f => f.family))].sort((a, b) => a.localeCompare(b));
-      if (fam.length) { fonts = fam; allFontsLoaded = true; fillFonts(); return true; }
-    } catch (e) {}
-    return false;
-  }
-  function fillFonts() {
-    const sel = propsEl.querySelector('[data-k=font]'); if (!sel) return;
-    const L = curLayer(); const names = fonts.slice();
-    if (L && L.font && !names.includes(L.font)) names.unshift(L.font);
-    sel.textContent = '';
-    for (const n of names) { const o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); }
-    if (L) sel.value = L.font;
-    const b = $('allFonts'); if (b) b.hidden = allFontsLoaded || !window.queryLocalFonts;
-  }
-
-  // ---------- layers ----------
-  const STYLE_KEYS = ['font', 'bold', 'italic', 'size', 'color', 'align', 'anchor', 'x', 'y', 'outline', 'outlineColor', 'outlineWidth',
-    'shadow', 'box', 'boxColor', 'boxOpacity', 'timed', 'start', 'end', 'fadeIn', 'fadeOut'];
-  const NUMERIC = new Set(['size', 'outlineWidth', 'boxOpacity', 'start', 'end', 'fadeIn', 'fadeOut', 'opacity']);
-  function newText() {
-    return { id: state.nextId++, type: 'text', text: '', font: fonts[0], bold: true, italic: false, size: 5.5, color: '#ffffff', align: 'center',
-      anchor: 'bottom', x: .5, y: .5, outline: true, outlineColor: '#000000', outlineWidth: 16, shadow: false,
-      box: false, boxColor: '#000000', boxOpacity: 70, timed: false, start: 0, end: '', fadeIn: 0, fadeOut: 0 };
-  }
-  function newLogo(img, name) {
-    return { id: state.nextId++, type: 'logo', img, name, size: 16, opacity: 100, anchor: 'tr', x: .5, y: .5,
-      timed: false, start: 0, end: '', fadeIn: 0, fadeOut: 0 };
-  }
-  const curLayer = () => state.layers.find(l => l.id === state.selLayer) || null;
-  const layerHasContent = L => L.type === 'logo' ? !!L.img : !!L.text.trim();
-  function layerName(L) {
-    if (L.type === 'logo') return 'Logo';
-    const n = state.layers.filter(l => l.type === 'text').indexOf(L) + 1;
-    const t = L.text.trim().replace(/\s+/g, ' ');
-    return t ? t : 'Text ' + n;
-  }
-
-  // ---------- drawing (the same code draws the preview and the exported frames) ----------
-  const segmenter = (typeof Intl !== 'undefined' && Intl.Segmenter) ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
-  const graphemes = s => segmenter ? Array.from(segmenter.segment(s), x => x.segment) : Array.from(s);
-
-  function wrapLines(ctx, text, maxW) {
-    const out = [];
-    for (const para of text.replace(/\r/g, '').split('\n')) {
-      const words = para.trim().split(/\s+/).filter(Boolean);
-      if (!words.length) { out.push(''); continue; }
-      let line = '';
-      for (const word of words) {
-        const test = line ? line + ' ' + word : word;
-        if (ctx.measureText(test).width <= maxW) { line = test; continue; }
-        if (line) { out.push(line); line = ''; }
-        if (ctx.measureText(word).width <= maxW) { line = word; continue; }
-        let part = '';                                  // a single word wider than the video
-        for (const g of graphemes(word)) {
-          if (part && ctx.measureText(part + g).width > maxW) { out.push(part); part = g; }
-          else part += g;
-        }
-        line = part;
-      }
-      out.push(line);
+  const saveUsed = () => store.set(USED_KEY, [...used]);
+  const codeText = () => state.code || 'CODE';
+  const captionText = it => it.caption == null ? '' : CAPTIONS[it.caption].replace(/\{CODE\}/g, codeText());
+  // ---------- caption position: a different spot on the screen for each video ----------
+  // Spots go from near the top to above the bottom (kept clear of YouTube's buttons at the very bottom).
+  // They are dealt from a shuffled deck that is remembered, so the next batch keeps getting new spots.
+  const SPOTS = [0.14, 0.22, 0.30, 0.38, 0.46, 0.54, 0.62, 0.70, 0.78];
+  let deck = store.get('cc-spots', []).filter(v => SPOTS.includes(v));
+  function takeSpot() {
+    if (!deck.length) {
+      deck = SPOTS.slice();
+      for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
     }
-    while (out.length && out[out.length - 1] === '') out.pop();
-    while (out.length && out[0] === '') out.shift();
+    const v = deck.shift();
+    store.set('cc-spots', deck);
+    return clamp(v + (Math.random() - 0.5) * 0.05, 0.1, 0.82);     // small extra shift so no two are exactly the same
+  }
+  const itemY = it => (it && it.y != null) ? it.y : 0.5;
+
+  // ---------- caption colors: a different look for each video, dealt the same way as the spots ----------
+  const STYLES = [
+    { text: '#ffffff', code: '#ffd23f', outline: '#000000' },
+    { text: '#ffffff', code: '#3dff8f', outline: '#000000' },
+    { text: '#ffe14d', code: '#ffffff', outline: '#000000' },
+    { text: '#ffffff', code: '#4fd8ff', outline: '#000000' },
+    { text: '#ffffff', code: '#ff5c8a', outline: '#000000' },
+    { text: '#111111', code: '#c4001d', box: '#ffd23f' },
+    { text: '#ffffff', code: '#ffd23f', box: 'rgba(0,0,0,.78)' },
+    { text: '#ffffff', code: '#ffe14d', box: '#e8283c' },
+    { text: '#ffffff', code: '#ffe14d', box: '#5b3df5' },
+    { text: '#111111', code: '#0a6cff', box: '#ffffff' },
+    { text: '#0b1d12', code: '#ffffff', box: '#2fd16f' },
+  ];
+  let styleDeck = store.get('cc-styles', []).filter(v => v >= 0 && v < STYLES.length);
+  function takeStyle() {
+    if (!styleDeck.length) {
+      styleDeck = STYLES.map((_, i) => i);
+      for (let i = styleDeck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [styleDeck[i], styleDeck[j]] = [styleDeck[j], styleDeck[i]]; }
+    }
+    const v = styleDeck.shift();
+    store.set('cc-styles', styleDeck);
+    return v;
+  }
+  const itemStyle = it => STYLES[(it && it.style != null) ? it.style : 0];
+
+  function showLeft() {
+    $('left').textContent = `${unused.length.toLocaleString('en-US')} of ${CAPTIONS.length.toLocaleString('en-US')} captions left`;
+  }
+
+  // ---------- drawing the caption (same code for the preview and the exported video) ----------
+  const FONT = '"Segoe UI", "Segoe UI Emoji", Arial, sans-serif';
+  const EMOJI = /(\p{Extended_Pictographic}️?)/u;
+  function wrapLines(ctx, text, maxW) {
+    const words = text.trim().split(/\s+/).filter(Boolean), out = [];
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (!line || ctx.measureText(test).width <= maxW) line = test;
+      else { out.push(line); line = w; }
+    }
+    if (line) out.push(line);
     return out;
   }
-  function hexA(hex, a) {
-    const n = parseInt(hex.slice(1), 16);
-    return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
-  }
-  // Where a box of bw×bh goes for this layer. Returns its top-left corner.
-  function place(L, W, H, bw, bh) {
-    let left, top;
-    const mx = W * 0.04, my = H * 0.06;
-    if (L.anchor === 'custom') { left = L.x * W - bw / 2; top = L.y * H - bh / 2; }
-    else if (L.type === 'logo') {
-      const m = W * 0.035;
-      left = L.anchor[1] === 'l' ? m : W - m - bw;
-      top = L.anchor[0] === 't' ? m : H - m - bh;
-    } else {
-      left = L.align === 'left' ? mx : L.align === 'right' ? W - mx - bw : (W - bw) / 2;
-      top = L.anchor === 'top' ? my : L.anchor === 'middle' ? (H - bh) / 2 : H - my - bh;
-    }
-    return [clamp(left, Math.min(0, W - bw), Math.max(0, W - bw)), clamp(top, Math.min(0, H - bh), Math.max(0, H - bh))];
-  }
-  function paintText(ctx, W, H, L) {
-    const text = L.text.trim();
-    if (!text) return null;
-    const fs = Math.max(8, Math.round(W * L.size / 100));
-    ctx.font = `${L.italic ? 'italic ' : ''}${L.bold ? 700 : 400} ${fs}px "${L.font}", ${FALLBACK}`;
-    ctx.textBaseline = 'middle';
-    const lines = wrapLines(ctx, text, W * 0.9);
-    const lh = fs * 1.35;
-    const widest = Math.max(1, ...lines.map(l => ctx.measureText(l).width));
-    const padX = L.box ? fs * 0.45 : fs * 0.12, padY = L.box ? fs * 0.22 : fs * 0.08;
-    const bw = Math.min(W, widest + padX * 2), bh = lines.length * lh + padY * 2;
-    const [left, top] = place(L, W, H, bw, bh);
-
-    if (L.box) {
-      ctx.fillStyle = hexA(L.boxColor, clamp(L.boxOpacity, 0, 100) / 100);
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(left, top, bw, bh, fs * 0.22); else ctx.rect(left, top, bw, bh);
-      ctx.fill();
-    }
-    ctx.textAlign = L.align;
-    const tx = L.align === 'left' ? left + padX : L.align === 'right' ? left + bw - padX : left + bw / 2;
-    const shadowOn = () => { ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = fs * 0.18; ctx.shadowOffsetY = fs * 0.07; ctx.shadowOffsetX = fs * 0.03; };
-    const shadowOff = () => { ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0; ctx.shadowOffsetX = 0; };
-    lines.forEach((line, i) => {
-      const y = top + padY + lh * i + lh / 2;
-      if (L.outline && L.outlineWidth > 0) {
-        if (L.shadow) shadowOn();
-        ctx.lineJoin = 'round';
-        ctx.lineWidth = Math.max(1, fs * L.outlineWidth / 100);
-        ctx.strokeStyle = L.outlineColor;
-        ctx.strokeText(line, tx, y);
-        shadowOff();
-      } else if (L.shadow) shadowOn();
-      ctx.fillStyle = L.color;
-      ctx.fillText(line, tx, y);
-      shadowOff();
+  // Splits a line into pieces so the code can be colored and emoji are not outlined.
+  function pieces(line, code) {
+    const out = [];
+    const parts = code ? line.split(code) : [line];
+    parts.forEach((p, i) => {
+      for (const s of p.split(EMOJI)) if (s) out.push({ s, kind: EMOJI.test(s) ? 'emoji' : 'text' });
+      if (i < parts.length - 1) out.push({ s: code, kind: 'code' });
     });
-    return { x: left, y: top, w: bw, h: bh };
+    return out;
   }
-  function paintLogo(ctx, W, H, L) {
-    if (!L.img) return null;
-    const iw = L.img.width || 1, ih = L.img.height || 1;
-    let w = W * L.size / 100, h = w * ih / iw;
-    if (h > H) { h = H; w = h * iw / ih; }
-    const [left, top] = place(L, W, H, w, h);
-    ctx.globalAlpha = clamp(L.opacity, 0, 100) / 100;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(L.img, left, top, w, h);
-    ctx.globalAlpha = 1;
-    return { x: left, y: top, w, h };
+  // Paints the caption on a transparent canvas of the video's size. Returns the box it covers.
+  function paintCaption(ctx, W, H, text, code, yFrac, st) {
+    st = st || STYLES[0];
+    if (!text) return null;
+    const portrait = H >= W;
+    const fs = Math.max(14, Math.round(W * (portrait ? 0.062 : 0.042)));
+    ctx.font = `700 ${fs}px ${FONT}`;
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    const lines = wrapLines(ctx, text, W * 0.86);
+    const lh = fs * 1.3, bh = lines.length * lh;
+    const widest = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const top = clamp(yFrac * H - bh / 2, H * 0.03, H * 0.97 - bh);
+    ctx.lineJoin = 'round'; ctx.lineWidth = Math.max(2, fs * 0.17); ctx.strokeStyle = st.outline || '#000';
+    const shadow = on => {
+      ctx.shadowColor = on ? 'rgba(0,0,0,.5)' : 'transparent';
+      ctx.shadowBlur = on ? fs * 0.2 : 0; ctx.shadowOffsetY = on ? fs * 0.06 : 0;
+    };
+    lines.forEach((line, i) => {
+      const y = top + lh * i + lh / 2;
+      const ps = pieces(line, code);
+      const lw = ctx.measureText(line).width;
+      if (st.box) {                                   // a rounded box behind each line
+        const px = fs * 0.32, py = fs * 0.1;
+        shadow(true); ctx.fillStyle = st.box; ctx.beginPath();
+        const bx = (W - lw) / 2 - px, by = y - lh / 2 + py * 0.3, bw2 = lw + px * 2, bh2 = lh - py * 0.6;
+        if (ctx.roundRect) ctx.roundRect(bx, by, bw2, bh2, fs * 0.22); else ctx.rect(bx, by, bw2, bh2);
+        ctx.fill(); shadow(false);
+      } else {
+        shadow(true);
+        let x = (W - lw) / 2;
+        for (const p of ps) { if (p.kind !== 'emoji') ctx.strokeText(p.s, x, y); x += ctx.measureText(p.s).width; }
+        shadow(false);
+      }
+      let x = (W - lw) / 2;
+      for (const p of ps) {
+        ctx.fillStyle = p.kind === 'code' ? st.code : st.text;
+        ctx.fillText(p.s, x, y);
+        x += ctx.measureText(p.s).width;
+      }
+    });
+    shadow(false);
+    return { x: (W - widest) / 2, y: top, w: widest, h: bh };
   }
-  // Renders one layer onto its own transparent canvas (so fades blend cleanly).
-  function renderLayer(L, W, H) {
-    const canvas = new OffscreenCanvas(W, H);
-    const ctx = canvas.getContext('2d');
-    const box = L.type === 'logo' ? paintLogo(ctx, W, H, L) : paintText(ctx, W, H, L);
-    return box ? { canvas, box } : null;
-  }
-  function alphaAt(L, t, D) {
-    let s = 0, e = D;
-    if (L.timed) { s = +L.start || 0; e = (L.end === '' || L.end == null) ? D : Math.min(+L.end, D); }
-    if (t < s - 1e-4 || t > e + 1e-4) return 0;
-    let a = 1;
-    if (L.fadeIn > 0) a = Math.min(a, (t - s) / L.fadeIn);
-    if (L.fadeOut > 0) a = Math.min(a, (e - t) / L.fadeOut);
-    return clamp(a, 0, 1);
+  function renderCaption(text, code, W, H, yFrac, st) {
+    const c = new OffscreenCanvas(W, H);
+    const box = paintCaption(c.getContext('2d'), W, H, text, code, yFrac, st);
+    return box ? { canvas: c, box } : null;
   }
 
   // ---------- preview ----------
-  const cache = new Map();            // layer id -> { key, r }
-  let boxes = new Map();              // layer id -> box drawn in the preview (for clicking and dragging)
-  let guides = null;
-  function cached(L, W, H) {
-    const { img, ...rest } = L;
-    const key = JSON.stringify(rest) + '|' + W + 'x' + H + '|' + (L.imgVer || 0);
-    const c = cache.get(L.id);
-    if (c && c.key === key) return c.r;
-    const r = renderLayer(L, W, H);
-    cache.set(L.id, { key, r });
-    return r;
-  }
+  let box = null;
   function draw() {
     const W = overlay.width, H = overlay.height;
     if (!W) return;
     const ctx = overlay.getContext('2d');
     ctx.clearRect(0, 0, W, H);
-    boxes = new Map();
-    const playing = !video.paused && !video.ended;
-    const D = isFinite(video.duration) ? video.duration : 1e9, t = video.currentTime || 0;
-    for (const L of state.layers) {
-      const r = cached(L, W, H);
-      if (!r) continue;
-      let a = alphaAt(L, t, D);
-      if (!playing) a = (L.timed && a === 0) ? 0.3 : 1;      // while paused, keep layers visible so they can be edited
-      if (a > 0) { ctx.globalAlpha = a; ctx.drawImage(r.canvas, 0, 0); ctx.globalAlpha = 1; }
-      boxes.set(L.id, r.box);
-    }
-    const sb = boxes.get(state.selLayer);
-    if (sb && !playing && !state.busy) {
-      const u = W / overlay.clientWidth || 1;
-      ctx.save();
-      ctx.lineWidth = 1.5 * u; ctx.setLineDash([6 * u, 4 * u]);
-      ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.strokeRect(sb.x - 3 * u, sb.y - 3 * u, sb.w + 6 * u, sb.h + 6 * u);
-      ctx.lineDashOffset = 5 * u;
-      ctx.strokeStyle = '#fff'; ctx.strokeRect(sb.x - 3 * u, sb.y - 3 * u, sb.w + 6 * u, sb.h + 6 * u);
-      if (guides) {
-        ctx.setLineDash([]); ctx.strokeStyle = '#ff4fa3'; ctx.lineWidth = 1 * u; ctx.beginPath();
-        if (guides.v) { ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); }
-        if (guides.h) { ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); }
-        ctx.stroke();
-      }
-      ctx.restore();
+    const it = curItem();
+    box = it ? paintCaption(ctx, W, H, captionText(it), codeText(), itemY(it), itemStyle(it)) : null;
+    if (it && it.caption == null && !state.busy) {         // hint inside the preview
+      const fs = Math.round(W * 0.035);
+      ctx.font = `600 ${fs}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, 0.5 * H - fs, W, fs * 2);
+      ctx.fillStyle = '#fff'; ctx.fillText('Press Generate to add the caption', W / 2, 0.5 * H);
     }
   }
   let rafOn = false;
   function loop() { draw(); syncTime(); if (!video.paused && !video.ended) requestAnimationFrame(loop); else rafOn = false; }
   function startLoop() { if (!rafOn) { rafOn = true; requestAnimationFrame(loop); } }
 
-  // dragging layers in the preview
-  const toVideo = e => { const r = overlay.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * overlay.width, (e.clientY - r.top) / r.height * overlay.height]; };
-  function hit(px, py) {
-    for (let i = state.layers.length - 1; i >= 0; i--) {
-      const b = boxes.get(state.layers[i].id);
-      if (b && px >= b.x - 6 && px <= b.x + b.w + 6 && py >= b.y - 6 && py <= b.y + b.h + 6) return state.layers[i];
-    }
-    return null;
-  }
+  // drag the caption up or down
+  const toVideoY = e => { const r = overlay.getBoundingClientRect(); return (e.clientY - r.top) / r.height; };
   let drag = null;
   overlay.addEventListener('pointerdown', e => {
     if (state.busy || e.button !== 0) return;
-    const [px, py] = toVideo(e);
-    const L = hit(px, py);
-    if (!L) { togglePlay(); return; }
-    video.pause();
-    if (state.selLayer !== L.id) selectLayer(L.id);
-    const b = boxes.get(L.id);
-    drag = { L, dx: px - (b.x + b.w / 2), dy: py - (b.y + b.h / 2), moved: false, sx: px, sy: py };
-    overlay.setPointerCapture(e.pointerId);
-    draw();
+    const r = overlay.getBoundingClientRect();
+    const py = (e.clientY - r.top) / r.height * overlay.height, px = (e.clientX - r.left) / r.width * overlay.width;
+    if (box && py >= box.y - 10 && py <= box.y + box.h + 10 && px >= box.x - 10 && px <= box.x + box.w + 10) {
+      video.pause();
+      drag = { it: curItem(), off: toVideoY(e) - itemY(curItem()) };
+      overlay.setPointerCapture(e.pointerId);
+    } else togglePlay();
   });
   overlay.addEventListener('pointermove', e => {
-    const [px, py] = toVideo(e);
-    if (!drag) { overlay.style.cursor = (!state.busy && hit(px, py)) ? 'move' : 'default'; return; }
-    const W = overlay.width, H = overlay.height;
-    if (!drag.moved && Math.hypot(px - drag.sx, py - drag.sy) < W * 0.006) return;
-    drag.moved = true;
-    let cx = (px - drag.dx) / W, cy = (py - drag.dy) / H;
-    guides = { v: Math.abs(cx - .5) < .015, h: Math.abs(cy - .5) < .015 };
-    if (guides.v) cx = .5; if (guides.h) cy = .5;
-    const b = boxes.get(drag.L.id);
-    const hw = b.w / W / 2, hh = b.h / H / 2;
-    drag.L.anchor = 'custom';
-    drag.L.x = hw < .5 ? clamp(cx, hw, 1 - hw) : .5;
-    drag.L.y = hh < .5 ? clamp(cy, hh, 1 - hh) : .5;
+    if (!drag) {
+      const r = overlay.getBoundingClientRect(), py = (e.clientY - r.top) / r.height * overlay.height;
+      overlay.style.cursor = box && py >= box.y - 10 && py <= box.y + box.h + 10 ? 'ns-resize' : 'default';
+      return;
+    }
+    if (drag.it) drag.it.y = clamp(toVideoY(e) - drag.off, 0.05, 0.95);
     draw();
   });
-  const endDrag = () => { if (drag) { drag = null; guides = null; syncPanel(); draw(); } };
+  const endDrag = () => { drag = null; };
   overlay.addEventListener('pointerup', endDrag);
   overlay.addEventListener('pointercancel', endDrag);
 
@@ -539,197 +352,93 @@
   for (const ev of ['play', 'playing']) video.addEventListener(ev, startLoop);
   for (const ev of ['pause', 'ended', 'seeked', 'timeupdate', 'loadeddata']) video.addEventListener(ev, () => { draw(); syncTime(); });
 
-  // ---------- layer chips ----------
-  function renderLayers() {
-    const box = $('layers'); box.textContent = '';
-    for (const L of state.layers) {
-      const chip = document.createElement('div'); chip.className = 'chip' + (L.id === state.selLayer ? ' sel' : '');
-      chip.setAttribute('role', 'button'); chip.tabIndex = 0; chip.dataset.layer = L.id;
-      const s = document.createElement('span'); s.textContent = layerName(L); chip.appendChild(s);
-      if (state.layers.length > 1) {
-        const x = document.createElement('button'); x.className = 'x'; x.type = 'button'; x.textContent = '×';
-        x.setAttribute('aria-label', 'Delete layer'); x.disabled = state.busy;
-        x.addEventListener('click', e => { e.stopPropagation(); removeLayer(L.id); });
-        chip.appendChild(x);
-      }
-      chip.addEventListener('click', () => selectLayer(L.id));
-      chip.addEventListener('keydown', e => { if (e.key === 'Enter') selectLayer(L.id); });
-      box.appendChild(chip);
-    }
-    $('layersBox').hidden = state.layers.length < 2;
-  }
-  function addTextLayer() {
+  // ---------- referral code and Generate ----------
+  codeEl.value = state.code;
+  codeEl.addEventListener('input', () => {
+    const v = codeEl.value.toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    if (v !== codeEl.value) codeEl.value = v;
+    state.code = v; store.set('cc-code', v);
+    renderList();
+  });
+  $('gen').addEventListener('click', () => {
     if (state.busy) return;
-    const L = newText(), cur = curLayer();
-    if (cur && cur.type === 'text') { for (const k of STYLE_KEYS) L[k] = cur[k]; L.anchor = cur.anchor === 'top' ? 'bottom' : 'top'; }
-    state.layers.push(L); selectLayer(L.id);
-    const ta = propsEl.querySelector('textarea'); if (ta) ta.focus();
-  }
-  function selectLayer(id) { if (state.busy) return; state.selLayer = id; renderLayers(); buildPanel(); draw(); }
-  function removeLayer(id) {
-    if (state.busy) return;
-    state.layers = state.layers.filter(l => l.id !== id); cache.delete(id);
-    if (!state.layers.length) state.layers.push(newText());
-    if (state.selLayer === id) state.selLayer = state.layers[0].id;
-    renderLayers(); buildPanel(); refresh();
-  }
-  $('logoFile').addEventListener('change', async () => {
-    const f = $('logoFile').files[0]; $('logoFile').value = '';
-    if (!f) return;
-    try {
-      const img = new Image(); img.src = URL.createObjectURL(f); await img.decode();
-      let L = state.layers.find(l => l.type === 'logo');
-      if (L) { L.img = img; L.name = f.name; L.imgVer = (L.imgVer || 0) + 1; }
-      else { L = newLogo(img, f.name); state.layers.push(L); }
-      setMsg(''); selectLayer(L.id); refresh();
-    } catch (e) { setMsg('That image could not be opened. Use a PNG or JPG file.', 'err'); }
-  });
-
-  // ---------- properties panel ----------
-  const TIMING = `
-      <div class="grp"><div class="lbl">Timing and fade</div>
-        <div class="seg"><button type="button" data-set="timed:false">Whole video</button><button type="button" data-set="timed:true">Custom time</button></div>
-        <div class="row" data-show="timed"><span class="mini">From</span><input type="number" data-k="start" min="0" step="0.1"><span class="mini">s &nbsp;to</span><input type="number" data-k="end" min="0" step="0.1" placeholder="end"><span class="mini">s</span></div>
-        <div class="row"><span class="mini">Fade in</span><input type="number" data-k="fadeIn" min="0" max="10" step="0.1"><span class="mini">s &nbsp;Fade out</span><input type="number" data-k="fadeOut" min="0" max="10" step="0.1"><span class="mini">s</span></div></div>
-      <div class="row"><button class="btn ghost" id="addText" type="button" style="flex:1">+ Another text</button><button class="btn ghost" id="addLogo" type="button" style="flex:1">+ Logo</button></div>`;
-  const TEXT_PANEL = `
-    <div class="grp"><label class="lbl" for="p-text">Text</label>
-      <textarea id="p-text" data-k="text" placeholder="Type the text to show on every video…"></textarea></div>
-    <div class="grp"><div class="lbl">Position</div>
-      <div class="pos big">
-        <button type="button" data-set="anchor:top"><span class="ico t"><i></i></span>Top</button>
-        <button type="button" data-set="anchor:middle"><span class="ico m"><i></i></span>Middle</button>
-        <button type="button" data-set="anchor:bottom"><span class="ico b"><i></i></span>Bottom</button></div></div>
-    <div class="grp"><label class="lbl" for="p-size">Text size</label>
-      <div class="row"><input type="range" id="p-size" data-k="size" min="1.5" max="16" step="0.25"></div></div>
-    <div class="grp"><div class="lbl">Color and style</div>
-      <div class="row"><input type="color" data-k="color" aria-label="Text color">
-        <div class="seg"><button type="button" data-style="outline">Outline</button><button type="button" data-style="box">Background box</button></div></div></div>
-    <details id="moreBox">
-      <summary>More options</summary>
-      <div class="more">
-      <div class="grp"><div class="lbl">Font <button class="link" id="allFonts" type="button" hidden>Show all installed fonts</button></div>
-        <div class="row"><select data-k="font" aria-label="Font"></select>
-          <button class="tog" type="button" data-toggle="bold" title="Bold" aria-label="Bold"><b>B</b></button>
-          <button class="tog" type="button" data-toggle="italic" title="Italic" aria-label="Italic"><i>I</i></button></div></div>
-      <div class="grp"><div class="lbl">Alignment <span class="hint">you can also drag the text in the preview</span></div>
-        <div class="seg"><button type="button" data-set="align:left">Left</button><button type="button" data-set="align:center">Center</button><button type="button" data-set="align:right">Right</button></div></div>
-      <div class="grp"><div class="lbl">Effects</div>
-        <div class="row"><label class="chk"><input type="checkbox" data-k="outline">Outline</label>
-          <input type="color" data-k="outlineColor" data-show="outline" aria-label="Outline color">
-          <input type="range" data-k="outlineWidth" data-show="outline" min="2" max="32" step="1" aria-label="Outline thickness"></div>
-        <div class="row"><label class="chk"><input type="checkbox" data-k="box">Background</label>
-          <input type="color" data-k="boxColor" data-show="box" aria-label="Background color">
-          <input type="range" data-k="boxOpacity" data-show="box" min="10" max="100" step="5" aria-label="Background opacity"></div>
-        <div class="row"><label class="chk"><input type="checkbox" data-k="shadow">Shadow</label></div></div>` + TIMING + `
-      </div>
-    </details>`;
-  const LOGO_PANEL = `
-    <div class="grp"><div class="lbl">Logo <button class="link" id="logoReplace" type="button">Replace image</button></div>
-      <div class="mini" id="logoName"></div>
-      <div class="row"><span class="mini" style="width:56px">Size</span><input type="range" data-k="size" min="3" max="60" step="0.5" aria-label="Logo size"></div>
-      <div class="row"><span class="mini" style="width:56px">Opacity</span><input type="range" data-k="opacity" min="10" max="100" step="5" aria-label="Logo opacity"></div></div>
-    <div class="grp"><div class="lbl">Position <span class="hint">or drag the logo in the preview</span></div>
-      <div class="pos four"><button type="button" data-set="anchor:tl">Top left</button><button type="button" data-set="anchor:tr">Top right</button><button type="button" data-set="anchor:bl">Bottom left</button><button type="button" data-set="anchor:br">Bottom right</button></div></div>
-    <details id="moreBox">
-      <summary>More options</summary>
-      <div class="more">` + TIMING + `
-      </div>
-    </details>`;
-
-  let moreOpen = false;
-  function buildPanel() {
-    const L = curLayer(); if (!L) { propsEl.textContent = ''; return; }
-    propsEl.innerHTML = L.type === 'logo' ? LOGO_PANEL : TEXT_PANEL;
-    const mb = $('moreBox'); mb.open = moreOpen;
-    mb.addEventListener('toggle', () => { moreOpen = mb.open; });
-    $('addText').addEventListener('click', addTextLayer);
-    $('addLogo').addEventListener('click', () => $('logoFile').click());
-    $('addLogo').hidden = state.layers.some(l => l.type === 'logo');
-    if (L.type === 'logo') { $('logoName').textContent = L.name || ''; $('logoReplace').addEventListener('click', () => $('logoFile').click()); }
-    else { fillFonts(); $('allFonts').addEventListener('click', async () => { if (!(await loadAllFonts())) setMsg('Could not read the installed fonts on this computer.', 'err'); }); }
-    syncPanel();
-  }
-  function syncPanel() {
-    const L = curLayer(); if (!L) return;
-    for (const el of propsEl.querySelectorAll('[data-k]')) {
-      const k = el.dataset.k;
-      if (el.type === 'checkbox') el.checked = !!L[k];
-      else if (el !== document.activeElement) el.value = L[k];
-      el.disabled = state.busy;
+    if (!state.code) { setMsg('Type your referral code first.', 'err'); codeEl.focus(); return; }
+    if (!state.items.length) { setMsg('Add your videos first.', 'err'); return; }
+    // Videos without a caption get one. If every video already has one, they all get new ones.
+    const targets = state.items.some(it => it.caption == null) ? state.items.filter(it => it.caption == null) : state.items;
+    let given = 0;
+    for (const it of targets) {
+      const idx = takeCaption();
+      if (idx == null) break;
+      it.caption = idx; it.y = takeSpot(); it.style = takeStyle(); it.status = 'ready'; given++;
     }
-    for (const el of propsEl.querySelectorAll('[data-set]')) {
-      const [k, v] = el.dataset.set.split(':'); el.setAttribute('aria-pressed', String(L[k]) === v); el.disabled = state.busy;
-    }
-    for (const el of propsEl.querySelectorAll('[data-toggle]')) { el.setAttribute('aria-pressed', !!L[el.dataset.toggle]); el.disabled = state.busy; }
-    for (const el of propsEl.querySelectorAll('[data-show]')) el.hidden = !L[el.dataset.show];
-    for (const el of propsEl.querySelectorAll('[data-style]')) {
-      el.setAttribute('aria-pressed', el.dataset.style === 'box' ? !!L.box && !L.outline : !!L.outline && !L.box); el.disabled = state.busy;
-    }
-    for (const id of ['addText', 'addLogo']) if ($(id)) $(id).disabled = state.busy;
-  }
-  propsEl.addEventListener('input', e => {
-    const el = e.target, k = el.dataset && el.dataset.k, L = curLayer(); if (!k || !L) return;
-    if (el.type === 'checkbox') L[k] = el.checked;
-    else if (NUMERIC.has(k)) L[k] = el.value === '' ? (k === 'end' ? '' : 0) : Math.max(0, +el.value || 0);
-    else L[k] = el.value;
-    if (el.type === 'checkbox') syncPanel();
-    if (k === 'text') { const s = document.querySelector(`.chip[data-layer="${L.id}"] span`); if (s) s.textContent = layerName(L); }
-    refresh();
+    saveUsed(); showLeft();
+    if (given < targets.length) setMsg('All captions have been used. Ask for a new caption list.', 'err');
+    else setMsg('');
+    $('openFolder').hidden = true;
+    renderList();
   });
-  propsEl.addEventListener('click', e => {
-    const b = e.target.closest('button'), L = curLayer(); if (!b || !L || state.busy) return;
-    if (b.dataset.set) { const [k, v] = b.dataset.set.split(':'); L[k] = v === 'true' ? true : v === 'false' ? false : v; }
-    else if (b.dataset.toggle) L[b.dataset.toggle] = !L[b.dataset.toggle];
-    else if (b.dataset.style) { L.outline = b.dataset.style === 'outline'; L.box = b.dataset.style === 'box'; }
-    else return;
-    syncPanel(); refresh();
-  });
-
-  // ---------- export settings ----------
-  const cleanName = s => s.replace(/[\\/:*?"<>|]/g, '').replace(/\.+$/, '').trim().slice(0, 60);
-  // Output name (without .mp4) for the n-th video: "TRACK-1", "TRACK-2"… or the video's own name when no name is given.
-  const outBase = (file, n) => state.outName ? `${state.outName}-${n}` : baseName(file.name) + '_text';
-  const baseName = n => n.replace(/\.[^.]+$/, '');
-  $('quality').value = state.quality;
-  $('quality').addEventListener('change', () => { state.quality = $('quality').value; store.set('vt-quality', state.quality); });
-  $('outName').addEventListener('input', () => { state.outName = cleanName($('outName').value); refresh(); });
-
-  // ---------- general refresh ----------
-  function setMsg(t, cls) { msg.textContent = t || ''; msg.className = 'msg' + (cls ? ' ' + cls : ''); }
-  function refresh() {
-    draw();
-    const n = state.items.length;
-    const btn = $('export');
-    btn.disabled = state.busy || !n || !state.layers.some(layerHasContent);
-    btn.textContent = n > 1 ? `Export ${n} videos` : 'Export video';
-    $('vbar').hidden = !n;
-    const names = (n ? state.items : [{ file: { name: 'my-video.mp4' } }]).slice(0, 2).map((it, i) => outBase(it.file, i + 1) + '.mp4');
-    $('nameSample').textContent = 'Saved as: ' + names.join(', ') + (n > 2 ? ' …' : '');
-  }
 
   // ---------- video list ----------
+  const curItem = () => state.items.find(x => x.id === state.sel) || null;
+  async function copyText(t) {
+    try { await navigator.clipboard.writeText(t); return true; }
+    catch (e) {
+      const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); ta.remove(); return ok;
+    }
+  }
+  function titleHtml(p, it) {
+    p.textContent = '';
+    if (it.caption == null) { p.className = 'none'; p.textContent = 'No caption yet. Press Generate.'; return; }
+    p.className = '';
+    const parts = CAPTIONS[it.caption].split('{CODE}');
+    parts.forEach((s, i) => { p.append(s); if (i < parts.length - 1) { const b = document.createElement('b'); b.textContent = codeText(); p.append(b); } });
+  }
   function renderList() {
-    listEl.textContent = '';
+    vidsEl.textContent = '';
     for (const it of state.items) {
       const li = document.createElement('li');
-      li.className = it.id === state.sel ? 'sel' : '';
+      li.className = 'vid' + (it.id === state.sel ? ' sel' : '');
       li.title = it.error || it.file.name;
+      const top = document.createElement('div'); top.className = 'top';
       const name = document.createElement('span'); name.className = 'name'; name.textContent = it.file.name;
       const st = document.createElement('span');
       st.className = 'st' + (it.status === 'done' ? ' ok' : it.status === 'error' ? ' err' : '');
-      st.textContent = it.status === 'done' ? 'Done' : it.status === 'error' ? 'Failed' : it.status === 'working' ? Math.round(it.progress * 100) + '%'
-        : it.status === 'queued' ? 'Waiting' : (it.dims || '');
+      st.textContent = it.status === 'done' ? 'Done' : it.status === 'error' ? 'Failed' : it.status === 'working' ? Math.round(it.progress * 100) + '%' : it.status === 'queued' ? 'Waiting' : '';
       const rm = document.createElement('button'); rm.className = 'rm'; rm.type = 'button'; rm.textContent = '×';
       rm.setAttribute('aria-label', 'Remove ' + it.file.name); rm.disabled = state.busy;
       rm.addEventListener('click', e => { e.stopPropagation(); removeItem(it.id); });
+      top.append(name, st, rm);
+      const title = document.createElement('div'); title.className = 'title';
+      const p = document.createElement('p'); titleHtml(p, it); title.append(p);
+      if (it.caption != null) {
+        const cp = document.createElement('button'); cp.className = 'copy'; cp.type = 'button'; cp.textContent = 'Copy title';
+        cp.addEventListener('click', async e => {
+          e.stopPropagation();
+          if (await copyText(captionText(it))) { cp.textContent = 'Copied'; setTimeout(() => { cp.textContent = 'Copy title'; }, 1400); }
+        });
+        title.append(cp);
+      }
       const fill = document.createElement('div'); fill.className = 'fill';
       fill.style.width = it.status === 'working' ? (it.progress * 100).toFixed(1) + '%' : '0';
-      li.append(name, st, rm, fill);
+      li.append(top, title, fill);
       li.addEventListener('click', () => select(it.id));
-      listEl.appendChild(li);
+      vidsEl.appendChild(li);
     }
     refresh();
+  }
+  function refresh() {
+    draw();
+    const n = state.items.length;
+    $('count').textContent = n ? `${n} added` : '';
+    const ready = n && state.code && state.items.every(it => it.caption != null);
+    $('export').disabled = state.busy || !ready;
+    $('export').textContent = n > 1 ? `Export ${n} videos` : 'Export video';
+    $('gen').disabled = state.busy;
+    $('gen').textContent = n && state.items.every(it => it.caption != null) ? 'Generate new captions' : 'Generate';
+    codeEl.disabled = state.busy;
+    $('add').disabled = state.busy;
   }
   function select(id) {
     const it = state.items.find(x => x.id === id);
@@ -749,7 +458,7 @@
     const all = Array.from(files || []);
     const vids = all.filter(f => f.type.startsWith('video/') || /\.(mp4|mov|mkv|webm|m4v|avi|ts)$/i.test(f.name));
     if (!vids.length) { if (all.length) setMsg('Those files are not videos.', 'err'); return; }
-    for (const file of vids) state.items.push({ id: state.nextId++, file, status: 'ready', progress: 0, dims: '', error: '' });
+    for (const file of vids) state.items.push({ id: state.nextId++, file, caption: null, status: 'ready', progress: 0, error: '' });
     setMsg(''); $('openFolder').hidden = true;
     if (state.sel == null) select(state.items[0].id); else renderList();
   }
@@ -769,15 +478,12 @@
     renderList();
   }
   video.addEventListener('loadedmetadata', () => {
-    overlay.width = video.videoWidth || 1280;
-    overlay.height = video.videoHeight || 720;
-    const it = state.items.find(x => x.id === state.sel);
-    if (it) { it.dims = `${video.videoWidth}×${video.videoHeight}`; renderList(); }
+    overlay.width = video.videoWidth || 1080; overlay.height = video.videoHeight || 1920;
     syncTime(); refresh();
   });
   video.addEventListener('error', () => {
     if (!video.getAttribute('src')) return;
-    if (!overlay.width) { overlay.width = 1280; overlay.height = 720; }
+    if (!overlay.width) { overlay.width = 1080; overlay.height = 1920; }
     setMsg('This video cannot be previewed, but exporting may still work.');
     refresh();
   });
@@ -793,22 +499,23 @@
   document.addEventListener('drop', e => { e.preventDefault(); stage.classList.remove('over'); addFiles(e.dataTransfer.files); });
 
   // ---------- exporting ----------
+  function setMsg(t, cls) { msg.textContent = t || ''; msg.className = 'msg' + (cls ? ' ' + cls : ''); }
   function setBusy(b) {
     state.busy = b;
     $('bar').style.display = b ? 'block' : 'none';
     $('cancel').hidden = !b;
-    for (const el of document.querySelectorAll('#add, #quality, #outName')) el.disabled = b;
-    renderLayers(); syncPanel(); renderList();
+    renderList();
   }
-  function freeName(used, base) {
+  // File name = the caption (characters Windows does not allow are removed).
+  const fileBase = text => text.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim().slice(0, 150) || 'video';
+  function freeName(usedNames, base) {
     for (let i = 1; ; i++) {
       const name = `${base}${i > 1 ? ` (${i})` : ''}.mp4`;
-      if (!used.has(name.toLowerCase())) { used.add(name.toLowerCase()); return name; }
+      if (!usedNames.has(name.toLowerCase())) { usedNames.add(name.toLowerCase()); return name; }
     }
   }
-  // Where the exported files go. Returns { label, open?, create(base) -> { name, target, discard(), finish() } }.
   async function chooseDest(MB) {
-    const used = new Set();
+    const usedNames = new Set();
     if (native) {
       const dir = await native.pickFolder();
       if (!dir) return null;
@@ -823,13 +530,13 @@
     }
     if (window.showDirectoryPicker) {
       let dir = null;
-      try { dir = await window.showDirectoryPicker({ mode: 'readwrite', id: 'videotext-out' }); }
+      try { dir = await window.showDirectoryPicker({ mode: 'readwrite', id: 'codecaption-out' }); }
       catch (e) { if (e && e.name === 'AbortError') return null; }
       if (dir) return {
         label: dir.name ? `the "${dir.name}" folder` : 'the folder you chose',
         async create(base) {
           let name;
-          for (;;) { name = freeName(used, base); try { await dir.getFileHandle(name); } catch (e) { break; } }
+          for (;;) { name = freeName(usedNames, base); try { await dir.getFileHandle(name); } catch (e) { break; } }
           const handle = await dir.getFileHandle(name, { create: true });
           const writable = await handle.createWritable();
           return { name, target: new MB.StreamTarget(writable, { chunked: true }), finish: async () => {},
@@ -840,7 +547,7 @@
     return {
       label: 'your Downloads folder',
       async create(base) {
-        const name = freeName(used, base), target = new MB.BufferTarget();
+        const name = freeName(usedNames, base), target = new MB.BufferTarget();
         return { name, target, discard: async () => {}, finish: async () => {
           const a = document.createElement('a');
           a.href = URL.createObjectURL(new Blob([target.buffer], { type: 'video/mp4' })); a.download = name;
@@ -851,44 +558,40 @@
     };
   }
 
-  async function exportOne(MB, it, base, layers, dest, onProgress) {
+  async function exportOne(MB, it, text, code, yFrac, st, dest, onProgress) {
     let out = null, input = null;
     try {
       input = new MB.Input({ source: new MB.BlobSource(it.file), formats: MB.ALL_FORMATS });
       const track = await input.getPrimaryVideoTrack();
       if (!track) throw new Error('No video track found in this file.');
       const W = track.displayWidth, H = track.displayHeight;
-      const D = await input.computeDuration();
+      let bitrate = MB.QUALITY_HIGH;
+      try {
+        const stats = await track.computePacketStats(150);
+        if (stats && stats.averageBitrate > 0) bitrate = Math.round(clamp(stats.averageBitrate * 1.15, 1.5e6, 60e6));
+      } catch (_) {}
 
-      let bitrate = ({ high: MB.QUALITY_HIGH, medium: MB.QUALITY_MEDIUM, small: MB.QUALITY_LOW })[state.quality] || MB.QUALITY_HIGH;
-      if (state.quality === 'original') {
-        try {
-          const stats = await track.computePacketStats(150);
-          if (stats && stats.averageBitrate > 0) bitrate = Math.round(clamp(stats.averageBitrate * 1.15, 1.5e6, 60e6));
-        } catch (_) {}
-      }
-
-      const rendered = layers.map(L => ({ L, r: renderLayer(L, W, H) })).filter(x => x.r);
+      const cap = renderCaption(text, code, W, H, yFrac, st);
       const frame = new OffscreenCanvas(W, H);
       const fctx = frame.getContext('2d', { alpha: false });
 
-      out = await dest.create(base);
+      out = await dest.create(fileBase(text));
       const output = new MB.Output({ format: new MB.Mp4OutputFormat(), target: out.target });
+      // File details (metadata), all true for this video: its caption, the code, the source file and the export time.
+      const now = new Date();
+      const tags = {
+        title: text,
+        comment: `Referral code: ${code} | Source file: ${it.file.name}`,
+        description: text,
+        date: now,
+        creationTime: now,
+        raw: { '\u00A9too': 'CodeCaption' },
+      };
       const conversion = await MB.Conversion.init({
-        input, output,
+        input, output, tags: () => tags,
         video: {
           bitrate, forceTranscode: true, allowTransformationMetadata: false, processedWidth: W, processedHeight: H,
-          process: sample => {
-            sample.draw(fctx, 0, 0, W, H);
-            const t = sample.timestamp;
-            for (const { L, r } of rendered) {
-              const a = alphaAt(L, t, D);
-              if (a <= 0) continue;
-              fctx.globalAlpha = a; fctx.drawImage(r.canvas, 0, 0);
-            }
-            fctx.globalAlpha = 1;
-            return frame;
-          },
+          process: sample => { sample.draw(fctx, 0, 0, W, H); if (cap) fctx.drawImage(cap.canvas, 0, 0); return frame; },
         },
       });
       if (!conversion.isValid) throw new Error('This video format cannot be processed on this computer.');
@@ -908,20 +611,11 @@
     }
   }
 
-  function eta(startedAt, fraction) {
-    const el = (performance.now() - startedAt) / 1000;
-    if (el < 3 || fraction < 0.03) return '…';
-    const left = el / fraction - el;
-    return left < 60 ? ` · about ${Math.max(1, Math.round(left))} s left` : ` · about ${Math.round(left / 60)} min left`;
-  }
-
   async function exportAll() {
     if (state.busy || !state.items.length) return;
     if (typeof Mediabunny === 'undefined' || typeof VideoEncoder === 'undefined') {
-      setMsg('Video export is not supported here. Open VideoText in Google Chrome or Microsoft Edge.', 'err');
-      return;
+      setMsg('Video export is not supported here. Open the app in Google Chrome or Microsoft Edge.', 'err'); return;
     }
-    const layers = state.layers.filter(layerHasContent).map(L => ({ ...L }));
     const items = state.items.slice();
     let dest;
     try { dest = await chooseDest(Mediabunny); } catch (e) { setMsg('Could not open that folder: ' + (e.message || e), 'err'); return; }
@@ -932,21 +626,18 @@
     video.pause();
     setBusy(true);
     let done = 0, failed = 0;
-    const total = items.length, startedAt = performance.now();
+    const total = items.length, code = codeText();
     const overall = p => { $('barfill').style.width = ((done + failed + p) / total * 100).toFixed(1) + '%'; };
     overall(0);
-
     for (let i = 0; i < total; i++) {
       const it = items[i];
       if (state.cancelled) { it.status = 'ready'; continue; }
       it.status = 'working'; renderList();
-      const label = total > 1 ? `Exporting video ${i + 1} of ${total}` : 'Exporting';
-      setMsg(label + '…');
+      setMsg(total > 1 ? `Exporting video ${i + 1} of ${total}…` : 'Exporting…');
       try {
-        await exportOne(Mediabunny, it, outBase(it.file, i + 1), layers, dest, p => {
+        await exportOne(Mediabunny, it, captionText(it), code, itemY(it), itemStyle(it), dest, p => {
           it.progress = p; overall(p);
-          if (!state.cancelled) setMsg(label + eta(startedAt, (done + failed + p) / total));
-          const li = listEl.children[state.items.indexOf(it)];
+          const li = vidsEl.children[state.items.indexOf(it)];
           if (li) { li.querySelector('.st').textContent = Math.round(p * 100) + '%'; li.querySelector('.fill').style.width = (p * 100).toFixed(1) + '%'; }
         });
         it.status = 'done'; done++;
@@ -956,7 +647,6 @@
       }
       overall(0); renderList();
     }
-
     setBusy(false);
     if (done && dest.open) { state.lastDest = dest; $('openFolder').hidden = false; }
     if (state.cancelled) setMsg(done ? `Cancelled. ${done} of ${total} saved to ${dest.label}.` : 'Cancelled.');
@@ -972,12 +662,10 @@
   });
   $('openFolder').addEventListener('click', () => { if (state.lastDest && state.lastDest.open) state.lastDest.open(); });
   window.addEventListener('beforeunload', e => { if (state.busy) { e.preventDefault(); e.returnValue = ''; } });
-  if (native && native.onStatus) native.onStatus(text => { if (!state.busy) setMsg(text); });
 
   // ---------- start ----------
-  state.layers.push(newText()); state.selLayer = state.layers[0].id;
-  renderLayers(); buildPanel(); renderList();
-  if (native) loadAllFonts();          // the desktop app can list every installed font straight away
+  showLeft(); renderList();
+  window.__cc = { state, CAPTIONS };       // used by automated tests only
 })();
 </script>
 </body>

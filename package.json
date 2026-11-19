@@ -1,13 +1,14 @@
 {
-  "name": "videotext",
-  "productName": "VideoText",
+  "name": "codecaption",
+  "productName": "CodeCaption",
   "version": "1.0.0",
-  "description": "Add the same text to the top, middle or bottom of one or many videos, keeping each video's original size.",
+  "description": "Puts a unique caption with your referral code on each video and uses it as the file name and title.",
   "author": "CodeWithRoni",
   "license": "MIT",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "captions": "node scripts/make-captions.js",
     "dist": "electron-builder --win --publish never",
     "standalone": "node scripts/build-standalone.js"
   },
@@ -16,51 +17,22 @@
     "electron-builder": "^26.18.0"
   },
   "build": {
-    "appId": "com.codewithroni.videotext",
-    "productName": "VideoText",
-    "files": [
-      "main.js",
-      "preload.js",
-      "app/**/*"
-    ],
-    "directories": {
-      "output": "dist",
-      "buildResources": "build"
-    },
+    "appId": "com.codewithroni.codecaption",
+    "productName": "CodeCaption",
+    "files": ["main.js", "preload.js", "app/**/*"],
+    "directories": { "output": "dist", "buildResources": "build" },
     "win": {
       "icon": "build/icon.png",
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
-          "arch": [
-            "x64"
-          ]
-        }
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
       ]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "VideoText-Setup-${version}.${ext}"
+      "artifactName": "CodeCaption-Setup-${version}.${ext}"
     },
-    "portable": {
-      "artifactName": "VideoText-Portable-${version}.${ext}"
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "CodeWithRoni",
-        "repo": "VideoText"
-      }
-    ]
-  },
-  "dependencies": {
-    "electron-updater": "^6.8.11"
+    "portable": { "artifactName": "CodeCaption-Portable-${version}.${ext}" }
   }
 }

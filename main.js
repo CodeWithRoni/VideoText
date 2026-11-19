@@ -13,8 +13,8 @@ function createWindow() {
     height: 820,
     minWidth: 940,
     minHeight: 620,
-    title: 'VideoText',
-    backgroundColor: '#0e1218',
+    title: 'CodeCaption',
+    backgroundColor: '#0d1117',
     autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -51,7 +51,7 @@ function createWindow() {
 // ---------- saving files ----------
 ipcMain.handle('pick-folder', async () => {
   let dir = null;
-  if (!app.isPackaged && process.env.VIDEOTEXT_TEST_DIR) dir = process.env.VIDEOTEXT_TEST_DIR;   // automated tests only
+  if (!app.isPackaged && process.env.CODECAPTION_TEST_DIR) dir = process.env.CODECAPTION_TEST_DIR;   // automated tests only
   else {
     const r = await dialog.showOpenDialog(win, {
       title: 'Choose where to save the videos',
@@ -112,18 +112,5 @@ ipcMain.handle('open-folder', async (_e, dir) => {
   if (allowedDirs.has(dir)) await shell.openPath(dir);
 });
 
-// ---------- automatic updates (installed version only) ----------
-function setupUpdates() {
-  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
-  try {
-    const { autoUpdater } = require('electron-updater');
-    const tell = text => { if (win) win.webContents.send('status', text); };
-    autoUpdater.on('update-available', info => tell(`Downloading update ${info.version}…`));
-    autoUpdater.on('update-downloaded', info => tell(`Update ${info.version} is ready and will install when you close VideoText.`));
-    autoUpdater.on('error', () => {});
-    autoUpdater.checkForUpdates().catch(() => {});
-  } catch (_) {}
-}
-
-app.whenReady().then(() => { createWindow(); setupUpdates(); });
+app.whenReady().then(createWindow);
 app.on('window-all-closed', () => app.quit());
