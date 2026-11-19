@@ -1,7 +1,7 @@
 {
   "name": "codecaption",
   "productName": "CodeCaption",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Puts a unique caption with your referral code on each video and uses it as the file name and title.",
   "author": "CodeWithRoni",
   "license": "MIT",
