@@ -62,7 +62,6 @@
   .vid.sel { border-color: var(--accent); }
   .vid .top { display: flex; align-items: center; gap: 8px; }
   .vid .name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: var(--muted); }
-  .vid .tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; white-space: nowrap; }
   .vid .st { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .vid .st.ok { color: var(--ok); font-weight: 600; } .vid .st.err { color: var(--danger); font-weight: 600; }
   .vid .rm { border: 0; background: none; color: var(--muted); width: 22px; height: 22px; border-radius: 6px; font-size: 16px; line-height: 1; padding: 0; }
@@ -211,29 +210,6 @@
     store.set('cc-styles', styleDeck);
     return v;
   }
-  // ---------- color filters: a clearly visible look for each video, dealt the same way ----------
-  const FILTERS = [
-    { name: 'Original', css: 'none' },
-    { name: 'Warm', css: 'sepia(0.35) saturate(1.3) hue-rotate(-8deg)' },
-    { name: 'Cool', css: 'saturate(1.2) hue-rotate(18deg) brightness(1.04)' },
-    { name: 'Vivid', css: 'saturate(1.6) contrast(1.15)' },
-    { name: 'Black & White', css: 'grayscale(1) contrast(1.15)' },
-    { name: 'Vintage', css: 'sepia(0.6) contrast(1.1) brightness(0.95)' },
-    { name: 'Bright', css: 'brightness(1.15) contrast(1.05) saturate(1.1)' },
-    { name: 'Moody', css: 'contrast(1.25) saturate(0.75) brightness(0.92)' },
-    { name: 'Faded', css: 'contrast(0.85) brightness(1.08) saturate(0.8)' },
-  ];
-  let filterDeck = store.get('cc-filters', []).filter(v => v >= 0 && v < FILTERS.length);
-  function takeFilter() {
-    if (!filterDeck.length) {
-      filterDeck = FILTERS.map((_, i) => i);
-      for (let i = filterDeck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [filterDeck[i], filterDeck[j]] = [filterDeck[j], filterDeck[i]]; }
-    }
-    const v = filterDeck.shift();
-    store.set('cc-filters', filterDeck);
-    return v;
-  }
-  const itemFilter = it => FILTERS[(it && it.filter != null) ? it.filter : 0];
   const itemStyle = it => STYLES[(it && it.style != null) ? it.style : 0];
 
   function showLeft() {
@@ -316,8 +292,6 @@
   // ---------- preview ----------
   let box = null;
   function draw() {
-    const fl = itemFilter(curItem()).css;
-    if (video.style.filter !== fl) video.style.filter = fl === 'none' ? '' : fl;
     const W = overlay.width, H = overlay.height;
     if (!W) return;
     const ctx = overlay.getContext('2d');
@@ -396,7 +370,7 @@
     for (const it of targets) {
       const idx = takeCaption();
       if (idx == null) break;
-      it.caption = idx; it.y = takeSpot(); it.style = takeStyle(); it.filter = takeFilter(); it.status = 'ready'; given++;
+      it.caption = idx; it.y = takeSpot(); it.style = takeStyle(); it.status = 'ready'; given++;
     }
     saveUsed(); showLeft();
     if (given < targets.length) setMsg('All captions have been used. Ask for a new caption list.', 'err');
@@ -435,8 +409,7 @@
       const rm = document.createElement('button'); rm.className = 'rm'; rm.type = 'button'; rm.textContent = '×';
       rm.setAttribute('aria-label', 'Remove ' + it.file.name); rm.disabled = state.busy;
       rm.addEventListener('click', e => { e.stopPropagation(); removeItem(it.id); });
-      if (it.caption != null) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = itemFilter(it).name; top.append(name, tag, st, rm); }
-      else top.append(name, st, rm);
+      top.append(name, st, rm);
       const title = document.createElement('div'); title.className = 'title';
       const p = document.createElement('p'); titleHtml(p, it); title.append(p);
       if (it.caption != null) {
@@ -591,7 +564,7 @@
     };
   }
 
-  async function exportOne(MB, it, text, code, yFrac, st, filterCss, dest, onProgress) {
+  async function exportOne(MB, it, text, code, yFrac, st, dest, onProgress) {
     let out = null, input = null;
     try {
       input = new MB.Input({ source: new MB.BlobSource(it.file), formats: MB.ALL_FORMATS });
@@ -624,11 +597,7 @@
         input, output, tags: () => tags,
         video: {
           bitrate, forceTranscode: true, allowTransformationMetadata: false, processedWidth: W, processedHeight: H,
-          process: sample => {
-            fctx.filter = filterCss; sample.draw(fctx, 0, 0, W, H); fctx.filter = 'none';
-            if (cap) fctx.drawImage(cap.canvas, 0, 0);
-            return frame;
-          },
+          process: sample => { sample.draw(fctx, 0, 0, W, H); if (cap) fctx.drawImage(cap.canvas, 0, 0); return frame; },
         },
       });
       if (!conversion.isValid) throw new Error('This video format cannot be processed on this computer.');
@@ -672,7 +641,7 @@
       it.status = 'working'; renderList();
       setMsg(total > 1 ? `Exporting video ${i + 1} of ${total}…` : 'Exporting…');
       try {
-        await exportOne(Mediabunny, it, captionText(it), code, itemY(it), itemStyle(it), itemFilter(it).css, dest, p => {
+        await exportOne(Mediabunny, it, captionText(it), code, itemY(it), itemStyle(it), dest, p => {
           it.progress = p; overall(p);
           const li = vidsEl.children[state.items.indexOf(it)];
           if (li) { li.querySelector('.st').textContent = Math.round(p * 100) + '%'; li.querySelector('.fill').style.width = (p * 100).toFixed(1) + '%'; }
